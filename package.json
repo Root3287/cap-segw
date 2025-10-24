@@ -1,0 +1,19 @@
+{
+  "name": "cap-segw",
+  "version": "1.0.0",
+  "description": "SAP CAP Plugin to generate SEGW classes",
+  "keywords": [
+    "CAP",
+    "CDS"
+  ],
+  "license": "Apache-2.0",
+  "author": "Timothy Gibbons",
+  "type": "typescript",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm run test"
+  },
+  "peerDependencies": {
+    "@sap/cds": "^9.4.4"
+  }
+}
