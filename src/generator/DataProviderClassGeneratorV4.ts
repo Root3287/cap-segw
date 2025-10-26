@@ -4,7 +4,7 @@ import ABAPGenerator, { ABAPClass } from "./ABAPGenerator";
 
 import { entity } from "@sap/cds";
 
-class DataProviderClassGeneratorV4 implements IFCodeGenerator, IFServiceClassGenerator {
+export default class DataProviderClassGeneratorV4 implements IFCodeGenerator, IFServiceClassGenerator {
 	private _class: ABAPClass = { name: "" };
 
 	public constructor(){}
