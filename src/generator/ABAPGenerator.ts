@@ -139,7 +139,7 @@ export default class ABAPGenerator implements IFCodeGenerator {
 
 		if(section.type === ABAPClassSectionType.PUBLIC){
 			this._class?.interfaces?.forEach?.((interfaceClass) => {
-				this._writer.writeLine(`INTERFACE ${interfaceClass}`);
+				this._writer.increaseIndent().writeLine(`INTERFACE ${interfaceClass}`).decreaseIndent();
 			});
 		}
 
@@ -257,10 +257,12 @@ export default class ABAPGenerator implements IFCodeGenerator {
 		}
 
 		if(method?.raising){
+			this._writer.increaseIndent();
 			this._writer.writeLine("RAISING").increaseIndent();
 			method?.raising?.forEach?.((err) => {
 				this._writer.writeLine(err);
 			});
+			this._writer.decreaseIndent();
 			this._writer.decreaseIndent();
 		}
 		this._writer.writeLine(".");
@@ -305,6 +307,6 @@ export default class ABAPGenerator implements IFCodeGenerator {
 		method?.code?.forEach((c) => {
 			this._writer.writeLine(c);
 		})
-		this._writer.decreaseIndent().writeLine(`ENDMETHOD.`);
+		this._writer.decreaseIndent().writeLine(`ENDMETHOD.`).writeLine();
 	}
 }
