@@ -25,6 +25,7 @@ export type ABAPMethodParameters = {
 	name: string;
 	referenceType: ABAPParameterReferenceType;
 	type: string;
+	isOptional ?: boolean;
 };
 
 export type ABAPMethod = {
@@ -240,7 +241,9 @@ export default class ABAPGenerator implements IFCodeGenerator {
 
 			parameters.forEach((param) => {
 				if(!param?.passBy) param.passBy = ABAPMethodParameterPassBy.REFERENCE;
-				this._writer.writeLine(`!${param.passBy}(${param.name}) ${param.referenceType} ${param.type}`);
+				let line = `${param.passBy}(${param.name}) ${param.referenceType} ${param.type}`;
+				if(param?.isOptional) line += " optional";
+				this._writer.writeLine(`!${line}`);
 			});
 
 			this._writer.decreaseIndent();
