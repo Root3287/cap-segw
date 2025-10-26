@@ -42,14 +42,17 @@ export type ABAPMethod = {
 
 export enum ABAPParameterType {
 	STATIC = "CLASS-DATA",
-	MEMBER = "DATA"
+	MEMBER = "DATA",
+	CONSTANTS = "CONSTANTS"
 };
 
 export type ABAPParameter = {
-	parameterType: ABAPParameterType;
+	parameterType?: ABAPParameterType;
 	name: string;
 	referenceType: ABAPParameterReferenceType;
 	type: string;
+	length?: number;
+	value ?: string;
 };
 
 export type ABAPStructure = {
@@ -173,7 +176,9 @@ export default class ABAPGenerator implements IFCodeGenerator {
 		this._writer.increaseIndent();
 		this._writer.writeLine(`TYPES: BEGIN OF ${structure.name},`).increaseIndent();
 		structure.parameters?.forEach((parameter) => {
-			this._writer.writeLine(`${parameter.name} ${parameter.referenceType} ${parameter.type},`);
+			let line = `${parameter.name} ${parameter.referenceType} ${parameter.type}`;
+			if(parameter?.length) line += ` length ${parameter.length}`;
+			this._writer.writeLine(`${line},`);
 		});
 		this._writer.decreaseIndent().writeLine(`END OF ${structure.name}.`);
 		this._writer.decreaseIndent();
@@ -196,7 +201,10 @@ export default class ABAPGenerator implements IFCodeGenerator {
 	 */
 	private _writeParameters(parameter: ABAPParameter){
 		this._writer.increaseIndent();
-		this._writer.writeLine(`${parameter.parameterType} ${parameter.name} ${parameter.referenceType} ${parameter.type}.`);
+		let line = `${parameter.parameterType} ${parameter.name} ${parameter.referenceType} ${parameter.type}`;
+		if(parameter?.length) line += ` length ${parameter.length}`;
+		if(parameter?.value) line += ` value ${parameter.value}`;
+		this._writer.writeLine(`${line}.`);
 		this._writer.decreaseIndent();
 	}
 
