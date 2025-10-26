@@ -63,12 +63,13 @@ function compileSingle(compilerInfo: CompilerInfo): OutputData[]{
 	const namespace = Object.keys(compilerInfo.csdl)[3];
 	const namespaceContainer = compilerInfo.csdl[namespace];
 	const csnService = compilerInfo.csn.services[namespace];
+	const namespaceSplit = namespace.split(".");
 
 	let odataVersion = parseInt(compilerInfo.options?.["odata-version"] ?? "4");
 
 	let classNames = {
-		mpc: (<any>csnService)?.["@segw.class.mpc"] ?? "ZCL_MPC",
-		dpc: (<any>csnService)?.["@segw.class.dpc"] ?? "ZCL_DPC",
+		mpc: (<any>csnService)?.["@segw.class.mpc"] ?? `ZCL_${namespaceSplit[namespaceSplit.length - 1].toUpperCase()}_MPC`,
+		dpc: (<any>csnService)?.["@segw.class.dpc"] ?? `ZCL_${namespaceSplit[namespaceSplit.length - 1].toUpperCase()}_DPC`,
 	};
 
 	let mpcGenerator = (odataVersion === 4) ? new ModelProviderClassGeneratorV4() : new ModelProviderClassGeneratorV2();
