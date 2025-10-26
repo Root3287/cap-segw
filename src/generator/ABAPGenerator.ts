@@ -140,7 +140,7 @@ export default class ABAPGenerator implements IFCodeGenerator {
 
 		if(section.type === ABAPClassSectionType.PUBLIC){
 			this._class?.interfaces?.forEach?.((interfaceClass) => {
-				this._writer.increaseIndent().writeLine(`INTERFACE ${interfaceClass}`).decreaseIndent();
+				this._writer.increaseIndent().writeLine(`INTERFACE ${interfaceClass}.`).decreaseIndent();
 			});
 		}
 
