@@ -28,7 +28,8 @@ export default class CodeWriter implements IFCodeGenerator {
 	 * @param  {string}     line to write
 	 * @return {CodeWriter}      for method chaining
 	 */
-	public writeLine(line: string): CodeWriter {
+	public writeLine(line?: string): CodeWriter {
+		if(!line) line = "";
 		const indentTabs = '\t'.repeat(this._indent);
 		this._code += `${indentTabs}${line}\n`;
 		return this;
