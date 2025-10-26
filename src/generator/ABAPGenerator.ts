@@ -32,6 +32,7 @@ export type ABAPMethod = {
 	exporting?: ABAPMethodParameters[];
 	changing?: ABAPMethodParameters[];
 	returning?: ABAPMethodParameters;
+	raising?: string[];
 	code?: string[];
 };
 
@@ -189,6 +190,14 @@ export default class ABAPGenerator implements IFCodeGenerator {
 			method.returning.passBy = ABAPMethodParameterPassBy.VALUE;
 			let returningParam: ABAPMethodParameters[] = [method.returning];
 			writeMethodParameters("RETURNING", returningParam);
+		}
+
+		if(method?.raising){
+			this._writer.writeLine("RAISING").increaseIndent();
+			method?.raising?.forEach?.((err) => {
+				this._writer.writeLine(err);
+			});
+			this._writer.decreaseIndent();
 		}
 		this._writer.writeLine(".");
 		this._writer.decreaseIndent();
