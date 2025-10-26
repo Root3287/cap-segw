@@ -52,9 +52,12 @@ export default class ModelProviderClassGeneratorV4 implements IFCodeGenerator, I
 	public setClassName(name: string): void { this._class.name = name; }
 
 	public addEntity(entity: entity): void {
+		let splitNamespace = entity.name.split(".");
+		let entityName = (<any>entity)?.["@segw.name"] ?? splitNamespace[splitNamespace.length-1];
+		
 		let defineEntityMethod: ABAPMethod = {
 			type: ABAPMethodType.MEMBER,
-			name: `define_${entity.name}`,
+			name: `define_${entityName}`,
 			importing: [
 				{
 					name: "io_model",
@@ -86,7 +89,7 @@ export default class ModelProviderClassGeneratorV4 implements IFCodeGenerator, I
 		writer.decreaseIndent().writeLine(").").writeLine();
 
 		writer.writeLine(`" Set External EDM name for entity type`);
-		writer.writeLine(`entity_type->set_edm_name( |${entity.name}| ).`).writeLine();
+		writer.writeLine(`entity_type->set_edm_name( |${entityName}| ).`).writeLine();
 
 		writer.writeLine(`" Rename External EDM names so CamelCase notation is used`);
 		writer.writeLine(`entity_type->get_primative_properties( IMPORTING et_property = primative_properties ).`);
@@ -99,7 +102,7 @@ export default class ModelProviderClassGeneratorV4 implements IFCodeGenerator, I
 		writer.writeLine(`" Create Navigation Property`);
 
 		writer.writeLine(`" Create Entity Set`);
-		writer.writeLine(`entity_set = entity_type->create_entity_set( '${entity.name}' ).`);
+		writer.writeLine(`entity_set = entity_type->create_entity_set( '${entityName}' ).`);
 		writer.writeLine(`entity_set->set_edm_name( ).`);
 
 		writer.writeLine(`" Add the binding of the navigation path`);
