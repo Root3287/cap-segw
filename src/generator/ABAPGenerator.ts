@@ -1,5 +1,5 @@
 import IFCodeGenerator from "./IFCodeGenerator";
-import { CodeWriter } from "./CodeWriter";
+import CodeWriter from "./CodeWriter";
 
 export enum ABAPMethodType {
 	STATIC = "CLASS-METHOD",

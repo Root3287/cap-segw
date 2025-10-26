@@ -1,6 +1,6 @@
 import IFCodeGenerator from "./IFCodeGenerator";
 
-export class CodeWriter implements IFCodeGenerator {
+export default class CodeWriter implements IFCodeGenerator {
 	private _indent = 0;
 	private _code: string = "";
 
