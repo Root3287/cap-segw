@@ -1,4 +1,4 @@
-import { IFCodeGenerator } from "./IFCodeGenerator";
+import IFCodeGenerator from "./IFCodeGenerator";
 import { CodeWriter } from "./CodeWriter";
 
 export enum ABAPMethodType {

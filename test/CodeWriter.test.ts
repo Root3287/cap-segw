@@ -1,4 +1,4 @@
-import { CodeWriter } from "../src/generator/CodeWriter";
+import CodeWriter from "../src/generator/CodeWriter";
 
 describe("CodeWriter", () => {
 	let writer: CodeWriter;

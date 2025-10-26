@@ -1,4 +1,4 @@
-export interface IFCodeGenerator {
+export default interface IFCodeGenerator {
 	/**
 	 * Generates Code
 	 * @return {string} Code from Generaton

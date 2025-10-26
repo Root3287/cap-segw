@@ -1,4 +1,4 @@
-import { IFCodeGenerator } from "./IFCodeGenerator";
+import IFCodeGenerator from "./IFCodeGenerator";
 
 export class CodeWriter implements IFCodeGenerator {
 	private _indent = 0;
