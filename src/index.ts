@@ -85,6 +85,7 @@ function compileSingle(compilerInfo: CompilerInfo): OutputData[]{
 
 	for(let entityType of csnService.entities){
 		mpcGenerator.addEntity(entityType);
+		dpcGenerator.addEntity(entityType);
 	}
 
 	return [
