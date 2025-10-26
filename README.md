@@ -35,6 +35,9 @@ cds compile srv -s all --to segw
 3. Run `cds compile --to segw` to generate ABAP classes.
 4. Copy or deploy the generated .abap files into your ABAP system for SEGW integration.
 
+By default this will generate an ODataV4 classes.
+To switch to ODataV2 run with `--odata-version 2` parameter.
+
 ## Development
 
 ```
