@@ -33,18 +33,19 @@ export default class ModelProviderClassGeneratorV4 implements IFCodeGenerator, I
 
 	public constructor(){
 		this._class.interfaces?.push("/iwbep/cl_v4_abs_model_prov");
+	}
 
+	public generate(): string {
+		let generator = new ABAPGenerator();
+		generator.setABAPClass(this._class);
+		
 		this._class?.publicSection?.methods?.push({
 			type: ABAPMethodType.MEMBER,
 			name: "/iwbep/if_v4_mp_basic~define",
 			isRedefinition: true,
 			code: this._entityDefineMethods.map((method) => `me->${method}( io_model ).`),
 		});
-	}
 
-	public generate(): string {
-		let generator = new ABAPGenerator();
-		generator.setABAPClass(this._class);
 		return generator.generate();
 	}
 
