@@ -1,22 +1,35 @@
 {
-  "name": "cap-segw",
+  "name": "@root3287/cap-segw",
   "version": "1.0.0",
   "description": "SAP CAP Plugin to generate SEGW classes",
   "keywords": [
     "CAP",
-    "CDS"
+    "CDS",
+    "ODataV2",
+    "ODataV4",
+    "SAP"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git@git-ssh.root3287.site:Root3287/cap-segw.git"
+  },
   "license": "Apache-2.0",
   "author": "Timothy Gibbons",
-  "main": "cds-plugin.js",
   "type": "commonjs",
-  "scripts": {
-    "test": "npm run test"
+  "main": "cds-plugin.js",
+  "directories": {
+    "test": "test"
   },
   "files": [
     "dist",
     "cds-plugin.js"
   ],
+  "scripts": {
+    "build": "npm run build",
+    "test": "npm run test"
+  },
+  "dependencies": {
+  },
   "devDependencies": {
     "@cap-js/cds-types": "^0.15.0",
     "@types/jest": "^30.0.0",
