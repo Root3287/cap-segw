@@ -52,7 +52,14 @@ export type ABAPStructure = {
 	parameters: ABAPParameter[];
 };
 
+export enum ABAPClassSectionType {
+	PUBLIC = "PUBLIC",
+	PROTECTED = "PROTECTED",
+	PRIVATE = "PRIVATE"
+};
+
 export type ABAPClassSection = {
+	type: ABAPClassSectionType;
 	structures?: ABAPStructure[];
 	tables?: string[];
 	parameters?: ABAPParameter[];
@@ -61,6 +68,11 @@ export type ABAPClassSection = {
 
 export type ABAPClass = {
 	name: string;
+	extending?: string;
+	inheriting?: string[];
+	interfaces?: string[];
+	isAbstract?: boolean;
+	isFinal?: boolean;
 	publicSection?: ABAPClassSection;
 	protectedSection?: ABAPClassSection;
 	privateSection?: ABAPClassSection;
@@ -90,17 +102,33 @@ export default class ABAPGenerator implements IFCodeGenerator {
 	 * Write ABAP Class Definition
 	 */
 	private _writeDefinition(): void {
-		this._writer.writeLine(`CLASS ${this._class.name} DEFINITION.`);
+		this._writer.writeLine(`CLASS ${this._class.name} DEFINITION`);
+		this._writer.increaseIndent();
+		this._writer.writeLine("PUBLIC")
+		this._class?.inheriting?.forEach?.((inhertingClass) => {
+			this._writer.writeLine(`INHERTING FROM ${inhertingClass}`);
+		});
+		if(!this._class.isAbstract) this._writer.writeLine("ABSTRACT");
+		if(!this._class.isFinal) this._writer.writeLine("FINAL");
+		this._writer.writeLine("CREATE PUBLIC.");
+		this._writer.decreaseIndent();
 		
-		this._writeSectionDefinition("PUBLIC", 		this._class?.publicSection);
-		this._writeSectionDefinition("PROTECTED", 	this._class?.protectedSection);
-		this._writeSectionDefinition("PRIVATE", 	this._class?.privateSection);
+		this._writeSectionDefinition(this._class?.publicSection);
+		this._writeSectionDefinition(this._class?.protectedSection);
+		this._writeSectionDefinition(this._class?.privateSection);
 		
 		this._writer.writeLine(`ENDCLASS.`);
 	}
 
-	private _writeSectionDefinition(sectionName: string, section?: ABAPClassSection): void {
-		this._writer.writeLine(`${sectionName} SECTION.`);
+	private _writeSectionDefinition(section?: ABAPClassSection): void {
+		if(!section) return;
+		this._writer.writeLine(`${section.type} SECTION.`);
+
+		if(section.type === ABAPClassSectionType.PUBLIC){
+			this._class?.interfaces?.forEach?.((interfaceClass) => {
+				this._writer.writeLine(`INTERFACE ${interfaceClass}`);
+			});
+		}
 
 		// TODO: Write Types
 		
