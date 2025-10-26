@@ -31,18 +31,23 @@ export default (csn: csn.CSN, options: any) => {
 
 	// LOG.info(csdl);
 
+	let generatedClasses: OutputData[] = [];
+
 	if((<any>csdl)[Symbol.iterator]){
-		return compileMultiple({
+		generatedClasses.push(...compileMultiple({
 			csn: <linked.LinkedCSN>(csn as unknown), 
 			csdl: csdl, 
 			options: options
-		});
+		}));
+	}else{
+		generatedClasses.push(...compileSingle({ 
+			csn: <linked.LinkedCSN>(csn as unknown), 
+			csdl: csdl, 
+			options: options
+		}));
 	}
-	return compileSingle({ 
-		csn: <linked.LinkedCSN>(csn as unknown), 
-		csdl: csdl, 
-		options: options
-	});
+
+	return _iterate(generatedClasses);
 }
 
 function compileMultiple(compilerInfo: CompilerInfo): OutputData[] {
@@ -88,6 +93,8 @@ function compileSingle(compilerInfo: CompilerInfo): OutputData[]{
 	];
 }
 
-function* _iterate(abapClass: Array<Record<string, string>>){
-
+function* _iterate(generatedClasses: OutputData[]){
+	for(const abapClass of generatedClasses){
+		yield [abapClass.code, { file: abapClass.filename }];
+	}
 }
