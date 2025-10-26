@@ -111,4 +111,68 @@ describe("ABAPGenerator", () => {
 		expect(code).toContain("EXPORTING");
 		expect(code).toContain("RETURNING");
 	});
+
+	test("Simple Structure", () => {
+		generator.setABAPClass({
+			name: "ZTEST",
+			publicSection: {
+				type: ABAPClassSectionType.PUBLIC,
+				structures: [
+					{
+						name: "TY_STRUC",
+						parameters: [
+							{ name: "ID", 	referenceType: ABAPParameterReferenceType.TYPE, type: "GUID" },
+							{ name: "name", referenceType: ABAPParameterReferenceType.TYPE, type: "string" },
+						]
+					}
+				]
+			}
+		});
+
+		const code = generator.generate();
+		console.log(code);
+		expect(code).not.toBeNull();
+		expect(code).toContain("TYPES");
+		expect(code).toContain("BEGIN OF");
+		expect(code).toContain("END OF");
+		expect(code).toContain("TY_STRUC");
+		expect(code).toContain("ID");
+	});
+
+	test("Simple Table Type", () => {
+		generator.setABAPClass({
+			name: "ZTEST",
+			publicSection: {
+				type: ABAPClassSectionType.PUBLIC,
+				structures: [
+					{
+						name: "TY_STRUC",
+						parameters: [
+							{ name: "ID", 	referenceType: ABAPParameterReferenceType.TYPE, type: "GUID" },
+							{ name: "name", referenceType: ABAPParameterReferenceType.TYPE, type: "string" },
+						]
+					}
+				],
+				tables: [
+					{
+						structure: {
+							name: "TT_STRUC",
+							referenceType: ABAPParameterReferenceType.TYPE_STANDARD_TABLE,
+							type: "TY_STRUC"
+						}
+					}
+				]
+			}
+		});
+
+		const code = generator.generate();
+		console.log(code);
+		expect(code).not.toBeNull();
+		expect(code).toContain("TYPES");
+		expect(code).toContain("BEGIN OF");
+		expect(code).toContain("END OF");
+		expect(code).toContain("TY_STRUC");
+		expect(code).toContain("TT_STRUC");
+		expect(code).toContain("TABLE");
+	});
 });

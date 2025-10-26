@@ -15,6 +15,9 @@ export enum ABAPParameterReferenceType {
 	TYPE = "TYPE",
 	TYPE_REF = "TYPE REF TO",
 	LIKE = "LIKE",
+	TYPE_STANDARD_TABLE = "TYPE STANDARD TABLE OF",
+	TYPE_SORTED_TABLE = "TYPE SORTED TABLE OF",
+	TYPE_HASH_TABLE = "TYPE HASH TABLE OF",
 };
 
 export type ABAPMethodParameters = {
@@ -53,6 +56,11 @@ export type ABAPStructure = {
 	parameters: ABAPParameter[];
 };
 
+export type ABAPTable = {
+	structure: ABAPParameter;
+	key?: string;
+}
+
 export enum ABAPClassSectionType {
 	PUBLIC = "PUBLIC",
 	PROTECTED = "PROTECTED",
@@ -62,7 +70,7 @@ export enum ABAPClassSectionType {
 export type ABAPClassSection = {
 	type: ABAPClassSectionType;
 	structures?: ABAPStructure[];
-	tables?: string[];
+	tables?: ABAPTable[];
 	parameters?: ABAPParameter[];
 	methods?: ABAPMethod[];
 };
@@ -131,22 +139,60 @@ export default class ABAPGenerator implements IFCodeGenerator {
 			});
 		}
 
-		// TODO: Write Types
-		
-		
-		// TODO: Write Paramters
+		// Write Types
+		section?.structures?.forEach((structure) => {
+			this._writeStructure(structure);
+			this._writer.writeLine();
+		});
+
+		// Table Types
+		section?.tables?.forEach((table) => {
+			this._writeTableType(table);
+			this._writer.writeLine();
+		});
+
+		// Parameters
 		section?.parameters?.forEach((parameter) => {
 			this._writeParameters(parameter);
-			this._writer.writeLine("");
+			this._writer.writeLine();
 		});
 		
-		// TODO: Write Methods
+		// Write Methods
 		section?.methods?.forEach((method)=>{
 			this._writeMethodDefinition(method);
-			this._writer.writeLine("");
+			this._writer.writeLine();
 		});
 	}
 
+	/**
+	 * Write internal structure type
+	 * @param {ABAPStructure} structure structure to write
+	 */
+	private _writeStructure(structure: ABAPStructure){
+		this._writer.increaseIndent();
+		this._writer.writeLine(`TYPES: BEGIN OF ${structure.name},`).increaseIndent();
+		structure.parameters?.forEach((parameter) => {
+			this._writer.writeLine(`${parameter.name} ${parameter.referenceType} ${parameter.type},`);
+		});
+		this._writer.decreaseIndent().writeLine(`END OF ${structure.name}.`);
+		this._writer.decreaseIndent();
+	}
+
+	/**
+	 * Write Internal Table Type
+	 * @param {ABAPTable} tables Internal Table type to write
+	 */
+	private _writeTableType(table: ABAPTable){
+		table.key ??= "";
+		this._writer.increaseIndent();
+		this._writer.writeLine(`TYPE ${table.structure.name} ${table.structure.referenceType} ${table.structure.type} ${table.key}.`);
+		this._writer.decreaseIndent();
+	}
+
+	/**
+	 * Write Member Parameters
+	 * @param {ABAPParameter} parameter parameter to write
+	 */
 	private _writeParameters(parameter: ABAPParameter){
 		this._writer.increaseIndent();
 		this._writer.writeLine(`${parameter.parameterType} ${parameter.name} ${parameter.referenceType} ${parameter.type}.`);
