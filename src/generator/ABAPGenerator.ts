@@ -30,6 +30,7 @@ export type ABAPMethodParameters = {
 export type ABAPMethod = {
 	type: ABAPMethodType;
 	name: string;
+	isFinal?: boolean;
 	isRedefinition?: boolean;
 	importing?: ABAPMethodParameters[];
 	exporting?: ABAPMethodParameters[];
@@ -117,10 +118,10 @@ export default class ABAPGenerator implements IFCodeGenerator {
 		this._class?.inheriting?.forEach?.((inhertingClass) => {
 			this._writer.writeLine(`INHERTING FROM ${inhertingClass}`);
 		});
-		if(!this._class.isAbstract) this._writer.writeLine("ABSTRACT");
-		if(!this._class.isFinal) this._writer.writeLine("FINAL");
+		if(this._class?.isAbstract) this._writer.writeLine("ABSTRACT");
+		if(this._class?.isFinal) this._writer.writeLine("FINAL");
 		this._writer.writeLine("CREATE PUBLIC.");
-		this._writer.decreaseIndent();
+		this._writer.decreaseIndent().writeLine();
 		
 		this._writeSectionDefinition(this._class?.publicSection);
 		this._writeSectionDefinition(this._class?.protectedSection);
@@ -211,13 +212,16 @@ export default class ABAPGenerator implements IFCodeGenerator {
 	 */
 	private _writeMethodDefinition(method: ABAPMethod): void {
 		this._writer.increaseIndent();
+
+		let methodDefinition = `${method.type}S ${method.name.substring(0,30)}`;
+		if(method.isRedefinition) methodDefinition += " REDEFINITION.";
+		if(method.isFinal) methodDefinition += " FINAL";
+		this._writer.writeLine(methodDefinition);
+
 		if(method.isRedefinition){
-			this._writer.writeLine(`${method.type}S ${method.name.substring(0,30)} REDEFINITION.`);
 			this._writer.decreaseIndent();
 			return;
 		}
-
-		this._writer.writeLine(`${method.type}S ${method.name}`);
 		
 		let writeMethodParameters = (methodSection: string, parameters?: ABAPMethodParameters[]): void => {
 			if(!parameters) return;
