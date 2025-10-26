@@ -155,12 +155,18 @@ export default class ABAPGenerator implements IFCodeGenerator {
 
 	/**
 	 * Writes Method Defintion
+	 * 
+	 * Note: Current implementation will trim the method names
+	 * to 30 chracters. This is an limitation of ABAP itself.
+	 * In the future we may implement throwing an error that 
+	 * is bypassable with a parameter like `bypass_length`.
+	 * 
 	 * @param {ABAPMethod} method Method to write
 	 */
 	private _writeMethodDefinition(method: ABAPMethod): void {
 		this._writer.increaseIndent();
 		if(method.isRedefinition){
-			this._writer.writeLine(`${method.type}S ${method.name} REDEFINITION.`);
+			this._writer.writeLine(`${method.type}S ${method.name.substring(0,30)} REDEFINITION.`);
 			this._writer.decreaseIndent();
 			return;
 		}
@@ -228,10 +234,16 @@ export default class ABAPGenerator implements IFCodeGenerator {
 
 	/**
 	 * Write Method Implmentation
+	 *
+	 * Note: Current implementation will trim the method names
+	 * to 30 chracters. This is an limitation of ABAP itself.
+	 * In the future we may implement throwing an error that 
+	 * is bypassable with a parameter like `bypass_length`.
+	 * 
 	 * @param {ABAPMethod} method Method to write
 	 */
 	private _writeMethodImplementation(method: ABAPMethod): void {
-		this._writer.writeLine(`METHOD ${method.name}.`).increaseIndent();
+		this._writer.writeLine(`METHOD ${method.name.substring(0,30)}.`).increaseIndent();
 		method?.code?.forEach((c) => {
 			this._writer.writeLine(c);
 		})
