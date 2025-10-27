@@ -150,15 +150,17 @@ export default class ModelProviderClassGeneratorV2 implements IFCodeGenerator, I
 
 		writer.writeLine(`" Create Entity Type`);
 		writer.writeLine("entity_type = io_model->create_entity_type( ").increaseIndent();
-		writer.writeLine(`iv_entity_type_name = ${entity.name}`);
+		writer.writeLine(`iv_entity_type_name = |${entityName}|`);
 		writer.writeLine(`is_def_entity_set = abap_false`);
 		writer.decreaseIndent().writeLine(").").writeLine();
 
 		for(let property of entity.elements){
 			// Loop over properties
+			let propertyName = (<any>property)?.["@segw.name"] ?? property.name; 
+			let abapFieldName = (<any>property)?.["@segw.abap.name"] ?? (<any>property)?.["@segw.name"] ?? property.name;
 			writer.writeLine("property = entity_type->create_property(").increaseIndent();
-			writer.writeLine("iv_property_name = ''");
-			writer.writeLine("iv_abap_fieldname = ''");
+			writer.writeLine(`iv_property_name = '${propertyName}'`);
+			writer.writeLine(`iv_abap_fieldname = '${abapFieldName}'`);
 			writer.decreaseIndent().writeLine(").");
 			
 			if(property?.key)
@@ -254,6 +256,9 @@ export default class ModelProviderClassGeneratorV2 implements IFCodeGenerator, I
 
 			// TODO: Labels
 			// lo_property->set_label_from_text_element( iv_text_element_symbol = '033' iv_text_element_container = gc_incl_name ). 			
+			
+			writer.writeLine();
+			writer.writeLine();
 		}
 		
 		writer.writeLine();
