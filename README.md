@@ -13,6 +13,28 @@ This plugin allows developers to design and maintain their data models in CAP CD
 - Allows custom annotations to control ABAP output generation.
 - Extensible design for future SEGW enhancements and ABAP compatibility layers.
 
+## Annotations
+
+Since there are some annotations that are not present in CDS but can be set on SEGW, we added some annotations.
+
+
+|        Annotation       |            Description        |     Type     |
+|-------------------------|-------------------------------|--------------|
+| `@segw.name`            | Set the name of the component |   `string`   |
+| `@segw.sortable`        | Enable Sortable               |   `boolean`  |
+| `@segw.filterable`      | Enabled Filterable            |   `boolean`  |
+| `@segw.conversion`      | ABAP Field Conversions        |   `boolean`  |
+| `@segw.pageable`        | Pagination                    |   `boolean`  |
+| `@segw.addressable`	  | Addressable                   |   `boolean`  |
+| `@segw.ftxt_search`     | Filter Text Search            |   `boolean`  |
+| `@segw.subscribable`    | Allows to be subscribable     |   `boolean`  |
+| `@segw.filter_required` | Filtered is required          |   `boolean`  |
+| `@segw.abap.name`       | ABAP Field Name Override      |   `string`   |
+| `@segw.mpc.class`       | MPC Class Name                |   `string`   |
+| `@segw.mpc.define.name` | MPC Define Entity Method Name |   `string`   |
+| `@segw.dpc.class`       | DPC Class Name                |   `string`   |
+
+
 ## Installation
 ```
 npm install @root3287/cap-segw
