@@ -1,9 +1,10 @@
-import ABAPGenerator, {
-	ABAPClassSectionType,
-	ABAPParameterType,
-	ABAPMethodType, 
-	ABAPParameterReferenceType 
-} from "../src/generator/ABAPGenerator";
+import ABAPGenerator from "../src/generator/ABAPGenerator";
+import {
+	ClassSectionType as ABAPClassSectionType,
+	ParameterType as ABAPParameterType,
+	MethodType as ABAPMethodType, 
+	ParameterReferenceType as ABAPParameterReferenceType 
+} from "../src/types/abap";
 
 describe("ABAPGenerator", () => {
 	let generator: ABAPGenerator;
