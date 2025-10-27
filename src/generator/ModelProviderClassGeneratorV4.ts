@@ -62,7 +62,7 @@ export default class ModelProviderClassGeneratorV4 implements IFCodeGenerator, I
 			LOG.warn(`${entityName} too long. Consider shortening it with @segw.name`);
 		}
 		
-		const methodName = (<any>entity?.["@segw.mpc.define.name"]) ?? `define_${entityName}`;
+		const methodName = ((<any>entity)?.["@segw.mpc.define.name"]) ?? `define_${entityName}`;
 		
 		if(methodName > 30){
 			LOG.warn(`Method ${methodName} too long. Consider shortening it with @segw.mpc.define.name`);

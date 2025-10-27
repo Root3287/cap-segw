@@ -125,7 +125,7 @@ export default class ModelProviderClassGeneratorV2 implements IFCodeGenerator, I
 			LOG.warn(`${entityName} too long. Consider shortening it with @segw.name`);
 		}
 		
-		const methodName = (<any>entity?.["@segw.mpc.define.name"]) ?? `define_${entityName}`;
+		const methodName = ((<any>entity)?.["@segw.mpc.define.name"]) ?? `define_${entityName}`;
 		
 		if(methodName > 30){
 			LOG.warn(`Method ${methodName} too long. Consider shortening it with @segw.mpc.define.name`);
@@ -164,43 +164,86 @@ export default class ModelProviderClassGeneratorV2 implements IFCodeGenerator, I
 			if(property?.key)
 				writer.writeLine("property->set_is_key( ).");
 			
-			// const PrimativeLookup: Record<CDSPrimitive, (writer: CodeWriter) => void> = {
-			// 	[CDSPrimitive.UUID]: 		(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_guid( )."); },
-			// 	[CDSPrimitive.Boolean]: 	(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_boolean( )."); },
-			// 	[CDSPrimitive.Integer]: 	(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_int32( )."); },
-			// 	[CDSPrimitive.Int16]: 		(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_int16( )."); },
-			// 	[CDSPrimitive.Int32]: 		(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_int32( )."); },
-			// 	[CDSPrimitive.Int64]: 		(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_int64( )."); },
-			// 	[CDSPrimitive.UInt8]: 		(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_byte( )."); },
-			// 	[CDSPrimitive.Decimal]: 	(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_decimal( )."); },
-			// 	[CDSPrimitive.Double]: 		(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_double( )."); },
-			// 	[CDSPrimitive.Date]: 		(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_date( )."); },
-			// 	[CDSPrimitive.Time]: 		(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_time( )."); },
-			// 	[CDSPrimitive.DateTime]: 	(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_datetime( )."); },
-			// 	[CDSPrimitive.Timestamp]: 	(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_timestamp( )."); },
-			// 	[CDSPrimitive.String]: 		(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_string( )."); },
-			// 	[CDSPrimitive.Binary]: 		(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_binary( )."); },
-			// 	[CDSPrimitive.LargeBinary]: (writer: CodeWriter) => { writer.writeLine("property->set_type_edm_binary( )."); },
-			// 	[CDSPrimitive.LargeString]: (writer: CodeWriter) => { writer.writeLine("property->set_type_edm_string( )."); },
-			// 	[CDSPrimitive.Map]: 		(writer: CodeWriter) => { /* NOT SUPPORTED */ },
-			// 	[CDSPrimitive.Vector]: 		(writer: CodeWriter) => { /* NOT SUPPORTED */ },
-			// };
-			// PrimativeLookup[<CDSPrimitive>property.type](writer);
+			switch(property.type){
+				case CDSPrimitive.UUID:
+					writer.writeLine("property->set_type_edm_guid( ).");
+					break;
+				case CDSPrimitive.Boolean:
+					writer.writeLine("property->set_type_edm_boolean( ).");
+					break;
+				case CDSPrimitive.Integer:
+					writer.writeLine("property->set_type_edm_int32( ).");
+					break;
+				case CDSPrimitive.Int16:
+					writer.writeLine("property->set_type_edm_int16( ).");
+					break;
+				case CDSPrimitive.Int32:
+					writer.writeLine("property->set_type_edm_int32( ).");
+					break;
+				case CDSPrimitive.Int64:
+					writer.writeLine("property->set_type_edm_int64( ).");
+					break;
+				case CDSPrimitive.UInt8:
+					writer.writeLine("property->set_type_edm_byte( ).");
+					break;
+				case CDSPrimitive.Decimal:
+					writer.writeLine("property->set_type_edm_decimal( ).");
+					break;
+				case CDSPrimitive.Double:
+					writer.writeLine("property->set_type_edm_double( ).");
+					break;
+				case CDSPrimitive.Date:
+					writer.writeLine("property->set_type_edm_date( ).");
+					break;
+				case CDSPrimitive.Time:
+					writer.writeLine("property->set_type_edm_time( ).");
+					break;
+				case CDSPrimitive.DateTime:
+					writer.writeLine("property->set_type_edm_datetime( ).");
+					break;
+				case CDSPrimitive.Timestamp:
+					writer.writeLine("property->set_type_edm_timestamp( ).");
+					break;
+				case CDSPrimitive.String:
+					writer.writeLine("property->set_type_edm_string( ).");
+					break;
+				case CDSPrimitive.Binary:
+					writer.writeLine("property->set_type_edm_binary( ).");
+					break;
+				case CDSPrimitive.LargeBinary:
+					writer.writeLine("property->set_type_edm_binary( ).");
+					break;
+				case CDSPrimitive.LargeString:
+					writer.writeLine("property->set_type_edm_string( ).");
+					break;
+				default:
+					break;
+			}
 			
 			// Main OData Annotations
-			
 			// writer.writeLine("property->set_precison( iv_precision = ).");
 			if((<any>property)?.length)
 				writer.writeLine(`property->set_maxlength( iv_max_length = ${(<any>property)?.length} ).`);
 			
-			writer.writeLine("property->set_creatable( abap_false ).");
-			writer.writeLine("property->set_updatable( abap_false ).");
-			writer.writeLine("property->set_nullable( abap_false ).");
+			const readOnly = ((<any>entity)?.["@readonly"] || (<any>property)?.["@readonly"]);
+			let readOnlyAbap = this._toAbapBool(!readOnly);
+			writer.writeLine(`property->set_creatable( ${readOnlyAbap} ).`);
+			writer.writeLine(`property->set_updatable( ${readOnlyAbap} ).`);
 			
-			// if(property?.sortable)
-			// 	writer.writeLine("property->set_sortable( abap_true ).");
-			// if(property?.filterable)
-			// 	writer.writeLine("property->set_filterable( abap_false ).");
+			const manditory = (<any>property)?.["@manditory"] ? "abap_false" : "abap_true";
+			writer.writeLine(`property->set_nullable( ${manditory} ).`);
+			
+			// Documentation is sparse on this one...
+			if((<any>property)?.["@segw.sortable"]){
+				let abapBool = this._toAbapBool((<any>property)?.["@segw.sortable"]);
+				writer.writeLine(`property->set_sortable( ${abapBool} ).`);
+			}
+			
+			// Documentation is sparse on this one..
+			if((<any>property)?.["@segw.filterable"]){
+				let abapBool = this._toAbapBool((<any>property)?.["@segw.filterable"]);
+				writer.writeLine(`property->set_filterable( ${abapBool} ).`);
+			}
 			
 			// TODO: Annotation
 			// writer.writeLine("property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(").increaseIndent();
@@ -215,20 +258,36 @@ export default class ModelProviderClassGeneratorV2 implements IFCodeGenerator, I
 		
 		writer.writeLine();
 		writer.writeLine("entity_set = entity_type->create_entity_set( '' ).").writeLine();
-		writer.writeLine("entity_set->set_creatable( abap_false ).");
-		writer.writeLine("entity_set->set_updatable( abap_false ).");
-		writer.writeLine("entity_set->set_deletable( abap_false ).");
+		
+		let readOnlyAbap = this._toAbapBool(!(<any>entity)?.["@readonly"]);
+		writer.writeLine(`entity_set->set_creatable( ${readOnlyAbap} ).`);
+		writer.writeLine(`entity_set->set_updatable( ${readOnlyAbap} ).`);
+		writer.writeLine(`entity_set->set_deletable( ${readOnlyAbap} ).`);
 		writer.writeLine();
-		writer.writeLine("entity_set->set_pageable( abap_true ).");
-		writer.writeLine("entity_set->set_addressable( abap_false ).");
-		writer.writeLine("entity_set->set_has_ftxt_search( abap_false ).");
-		writer.writeLine("entity_set->set_subscribable( abap_false ).");
-		writer.writeLine("entity_set->set_filter_required( abap_false ).");
-
+		
+		if((<any>entity)?.["@segw.pageable"]){
+			writer.writeLine(`entity_set->set_pageable( ${this._toAbapBool((<any>entity)?.["@segw.sortable"])} ).`);
+		}
+		if((<any>entity)?.["@segw.addressable"]){
+			writer.writeLine(`entity_set->set_addressable( ${this._toAbapBool((<any>entity)?.["@segw.addressable"])} ).`);
+		}
+		if((<any>entity)?.["@segw.ftxt_search"]){
+			writer.writeLine(`entity_set->set_has_ftxt_search( ${this._toAbapBool((<any>entity)?.["@segw.ftxt_search"])} ).`);
+		}
+		if((<any>entity)?.["@segw.subscribable"]){
+			writer.writeLine(`entity_set->set_subscribable( ${this._toAbapBool((<any>entity)?.["@segw.subscribable"])} ).`);
+		}
+		if((<any>entity)?.["@segw.filter_required"]){
+			writer.writeLine(`entity_set->set_filter_required( ${this._toAbapBool((<any>entity)?.["@segw.filter_required"])} ).`);
+		}
 		writer.writeLine();
 
 		defineEntityMethod.code = writer.generate().split("\n");
 		this._entityDefineMethods.push(defineEntityMethod.name);
 		this._class?.protectedSection?.methods?.push(defineEntityMethod);
 	};
+
+	private _toAbapBool(value: boolean): string {
+		return (value) ? "abap_true" : "abap_false";
+	}
 }
