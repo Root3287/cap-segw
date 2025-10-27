@@ -1,6 +1,7 @@
 import IFCodeGenerator from "./IFCodeGenerator";
 import IFServiceClassGenerator from "./IFServiceClassGenerator";
-import ABAPGenerator, { ABAPClass } from "./ABAPGenerator";
+import ABAPGenerator from "./ABAPGenerator"; 
+import { Class as ABAPClass } from "../types/abap";
 
 import { entity } from "@sap/cds";
 

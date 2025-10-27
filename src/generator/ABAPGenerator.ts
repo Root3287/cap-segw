@@ -1,104 +1,14 @@
 import IFCodeGenerator from "./IFCodeGenerator";
 import CodeWriter from "./CodeWriter";
-
-export enum ABAPMethodType {
-	STATIC = "CLASS-METHOD",
-	MEMBER = "METHOD",
-};
-
-export enum ABAPMethodParameterPassBy {
-	REFERENCE = "REFERENCE",
-	VALUE = "VALUE",
-}
-
-export enum ABAPParameterReferenceType {
-	TYPE = "TYPE",
-	TYPE_REF = "TYPE REF TO",
-	LIKE = "LIKE",
-	TYPE_STANDARD_TABLE = "TYPE STANDARD TABLE OF",
-	TYPE_SORTED_TABLE = "TYPE SORTED TABLE OF",
-	TYPE_HASH_TABLE = "TYPE HASH TABLE OF",
-};
-
-export type ABAPMethodParameters = {
-	passBy?: ABAPMethodParameterPassBy;
-	name: string;
-	referenceType: ABAPParameterReferenceType;
-	type: string;
-	isOptional ?: boolean;
-};
-
-export type ABAPMethod = {
-	type: ABAPMethodType;
-	name: string;
-	isFinal?: boolean;
-	isRedefinition?: boolean;
-	importing?: ABAPMethodParameters[];
-	exporting?: ABAPMethodParameters[];
-	changing?: ABAPMethodParameters[];
-	returning?: ABAPMethodParameters;
-	raising?: string[];
-	code?: string[];
-};
-
-export enum ABAPParameterType {
-	STATIC = "CLASS-DATA",
-	MEMBER = "DATA",
-	CONSTANTS = "CONSTANTS"
-};
-
-export type ABAPParameter = {
-	parameterType?: ABAPParameterType;
-	name: string;
-	referenceType: ABAPParameterReferenceType;
-	type: string;
-	length?: number;
-	value ?: string;
-};
-
-export type ABAPStructure = {
-	name: string;
-	parameters: ABAPParameter[];
-};
-
-export type ABAPTable = {
-	structure: ABAPParameter;
-	key?: string;
-}
-
-export enum ABAPClassSectionType {
-	PUBLIC = "PUBLIC",
-	PROTECTED = "PROTECTED",
-	PRIVATE = "PRIVATE"
-};
-
-export type ABAPClassSection = {
-	type: ABAPClassSectionType;
-	structures?: ABAPStructure[];
-	tables?: ABAPTable[];
-	parameters?: ABAPParameter[];
-	methods?: ABAPMethod[];
-};
-
-export type ABAPClass = {
-	name: string;
-	extending?: string;
-	inheriting?: string[];
-	interfaces?: string[];
-	isAbstract?: boolean;
-	isFinal?: boolean;
-	publicSection?: ABAPClassSection;
-	protectedSection?: ABAPClassSection;
-	privateSection?: ABAPClassSection;
-};
+import * as ABAP from "../types/abap";
 
 export default class ABAPGenerator implements IFCodeGenerator {
-	private _class: ABAPClass = {
+	private _class: ABAP.Class = {
 		name: "",
 	};
 	private _writer: CodeWriter = new CodeWriter();
 
-	public setABAPClass(abapClass: ABAPClass){
+	public setABAPClass(abapClass: ABAP.Class){
 		this._class = abapClass;
 	}
 
@@ -134,11 +44,11 @@ export default class ABAPGenerator implements IFCodeGenerator {
 		this._writer.writeLine(`ENDCLASS.`);
 	}
 
-	private _writeSectionDefinition(section?: ABAPClassSection): void {
+	private _writeSectionDefinition(section?: ABAP.ClassSection): void {
 		if(!section) return;
 		this._writer.writeLine(`${section.type} SECTION.`);
 
-		if(section.type === ABAPClassSectionType.PUBLIC){
+		if(section.type === ABAP.ClassSectionType.PUBLIC){
 			this._class?.interfaces?.forEach?.((interfaceClass) => {
 				this._writer.increaseIndent().writeLine(`INTERFACE ${interfaceClass}.`).decreaseIndent();
 			});
@@ -173,7 +83,7 @@ export default class ABAPGenerator implements IFCodeGenerator {
 	 * Write internal structure type
 	 * @param {ABAPStructure} structure structure to write
 	 */
-	private _writeStructure(structure: ABAPStructure){
+	private _writeStructure(structure: ABAP.Structure){
 		this._writer.increaseIndent();
 		this._writer.writeLine(`TYPES: BEGIN OF ${structure.name},`).increaseIndent();
 		structure.parameters?.forEach((parameter) => {
@@ -189,7 +99,7 @@ export default class ABAPGenerator implements IFCodeGenerator {
 	 * Write Internal Table Type
 	 * @param {ABAPTable} tables Internal Table type to write
 	 */
-	private _writeTableType(table: ABAPTable){
+	private _writeTableType(table: ABAP.Table){
 		table.key ??= "";
 		this._writer.increaseIndent();
 		this._writer.writeLine(`TYPE ${table.structure.name} ${table.structure.referenceType} ${table.structure.type} ${table.key}.`);
@@ -200,7 +110,7 @@ export default class ABAPGenerator implements IFCodeGenerator {
 	 * Write Member Parameters
 	 * @param {ABAPParameter} parameter parameter to write
 	 */
-	private _writeParameters(parameter: ABAPParameter){
+	private _writeParameters(parameter: ABAP.Parameter){
 		this._writer.increaseIndent();
 		let line = `${parameter.parameterType} ${parameter.name} ${parameter.referenceType} ${parameter.type}`;
 		if(parameter?.length) line += ` length ${parameter.length}`;
@@ -219,7 +129,7 @@ export default class ABAPGenerator implements IFCodeGenerator {
 	 * 
 	 * @param {ABAPMethod} method Method to write
 	 */
-	private _writeMethodDefinition(method: ABAPMethod): void {
+	private _writeMethodDefinition(method: ABAP.Method): void {
 		this._writer.increaseIndent();
 
 		let methodDefinition = `${method.type}S ${method.name.substring(0,30)}`;
@@ -232,7 +142,7 @@ export default class ABAPGenerator implements IFCodeGenerator {
 			return;
 		}
 		
-		let writeMethodParameters = (methodSection: string, parameters?: ABAPMethodParameters[]): void => {
+		let writeMethodParameters = (methodSection: string, parameters?: ABAP.MethodParameters[]): void => {
 			if(!parameters) return;
 
 			this._writer.increaseIndent();
@@ -240,7 +150,7 @@ export default class ABAPGenerator implements IFCodeGenerator {
 			this._writer.increaseIndent();
 
 			parameters.forEach((param) => {
-				if(!param?.passBy) param.passBy = ABAPMethodParameterPassBy.REFERENCE;
+				if(!param?.passBy) param.passBy = ABAP.MethodParameterPassBy.REFERENCE;
 				let line = `${param.passBy}(${param.name}) ${param.referenceType} ${param.type}`;
 				if(param?.isOptional) line += " optional";
 				this._writer.writeLine(`!${line}`);
@@ -254,8 +164,8 @@ export default class ABAPGenerator implements IFCodeGenerator {
 		writeMethodParameters("EXPORTING", method?.exporting);
 		writeMethodParameters("CHANGING", method?.changing);
 		if(method?.returning){
-			method.returning.passBy = ABAPMethodParameterPassBy.VALUE;
-			let returningParam: ABAPMethodParameters[] = [method.returning];
+			method.returning.passBy = ABAP.MethodParameterPassBy.VALUE;
+			let returningParam: ABAP.MethodParameters[] = [method.returning];
 			writeMethodParameters("RETURNING", returningParam);
 		}
 
@@ -279,7 +189,7 @@ export default class ABAPGenerator implements IFCodeGenerator {
 		this._writer.writeLine(`CLASS ${this._class.name} IMPLEMENTATION.`);
 		this._writer.increaseIndent();
 
-		let methods: ABAPMethod[] = [];
+		let methods: ABAP.Method[] = [];
 		if(this._class?.publicSection?.methods)
 			methods.push(...this._class?.publicSection?.methods);
 		if(this._class?.protectedSection?.methods)
@@ -305,7 +215,7 @@ export default class ABAPGenerator implements IFCodeGenerator {
 	 * 
 	 * @param {ABAPMethod} method Method to write
 	 */
-	private _writeMethodImplementation(method: ABAPMethod): void {
+	private _writeMethodImplementation(method: ABAP.Method): void {
 		this._writer.writeLine(`METHOD ${method.name.substring(0,30)}.`).increaseIndent();
 		method?.code?.forEach((c) => {
 			this._writer.writeLine(c);

@@ -1,0 +1,16 @@
+export enum Primitive {
+	GUID = 'edm.GUID',
+	Boolean = 'edm.Boolean',
+	Byte = 'edm.Byte',
+	Int16 = 'edm.Int16',
+	Int32 = 'edm.Int32',
+	Int64 = 'edm.Int64',
+	Decimal = 'edm.Decimal',
+	Double = 'edm.Double',
+	Date = 'edm.Date',
+	Time = 'edm.Time',
+	DateTime = 'edm.DateTime',
+	Timestamp = 'edm.Timestamp',
+	String = 'edm.String',
+	Binary = 'edm.Binary',
+};

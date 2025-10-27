@@ -1,12 +1,13 @@
 import IFCodeGenerator from "./IFCodeGenerator";
 import IFServiceClassGenerator from "./IFServiceClassGenerator";
-import ABAPGenerator, { 
-	ABAPClass, 
-	ABAPClassSectionType,
-	ABAPMethod, 
-	ABAPMethodType, 
-	ABAPParameterReferenceType
-} from "./ABAPGenerator";
+import ABAPGenerator from "./ABAPGenerator";
+import { 
+	Class as ABAPClass, 
+	ClassSectionType as ABAPClassSectionType,
+	Method as ABAPMethod, 
+	MethodType as ABAPMethodType, 
+	ParameterReferenceType as ABAPParameterReferenceType
+} from "../types/abap";
 import CodeWriter from "./CodeWriter";
 
 import { entity } from "@sap/cds";

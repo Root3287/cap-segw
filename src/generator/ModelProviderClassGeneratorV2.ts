@@ -1,15 +1,17 @@
 import IFCodeGenerator from "./IFCodeGenerator";
 import IFServiceClassGenerator from "./IFServiceClassGenerator";
-import ABAPGenerator, { 
-	ABAPClass, 
-	ABAPClassSectionType,
-	ABAPMethod, 
-	ABAPMethodType, 
-	ABAPParameterReferenceType
-} from "./ABAPGenerator";
+import ABAPGenerator from "./ABAPGenerator"; 
+import { 
+	Class as ABAPClass, 
+	ClassSectionType as ABAPClassSectionType,
+	Method as ABAPMethod, 
+	MethodType as ABAPMethodType, 
+	ParameterReferenceType as ABAPParameterReferenceType
+} from "../types/abap";
+import { Primitive as CDSPrimitive } from "../types/cds";
 import CodeWriter from "./CodeWriter";
 
-import { entity } from "@sap/cds";
+import { entity, csn } from "@sap/cds";
 
 export default class ModelProviderClassGeneratorV2 implements IFCodeGenerator, IFServiceClassGenerator {
 	private _class: ABAPClass = { 
