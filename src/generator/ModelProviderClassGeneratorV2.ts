@@ -44,47 +44,6 @@ export default class ModelProviderClassGeneratorV2 implements IFCodeGenerator, I
 	public generate(): string {
 		let generator = new ABAPGenerator();
 		generator.setABAPClass(this._class);
-		
-		this._class?.publicSection?.structures?.push({
-			name: "ts_text_element",
-			parameters: [
-				{ name: "artifact_name", referenceType: ABAPParameterReferenceType.TYPE, type: "c", length: 40 },
-				{ name: "artifact_type", referenceType: ABAPParameterReferenceType.TYPE, type: "c", length: 4 },
-				{ name: "parent_artifact_name", referenceType: ABAPParameterReferenceType.TYPE, type: "c", length: 40 },
-				{ name: "parent_artifact_name", referenceType: ABAPParameterReferenceType.TYPE, type: "c", length: 4 },
-				{ name: "text_symbol", referenceType: ABAPParameterReferenceType.TYPE, type: "textpoolky" },
-			]
-		});
-		this._class?.publicSection?.tables?.push({
-			structure: { 
-				name: "tt_text_elements", 
-				referenceType: ABAPParameterReferenceType.TYPE_STANDARD_TABLE, 
-				type: "ts_text_element" 
-			},
-			key: "with key text_symbol"
-		});
-
-		this._class?.publicSection?.methods?.push({
-			type: ABAPMethodType.MEMBER,
-			name: "LOAD_TEXT_ELEMENTS",
-			isFinal: true,
-			returning: {
-				name: "rt_text_elements",
-				referenceType: ABAPParameterReferenceType.TYPE,
-				type: "tt_text_elements",
-			},
-			raising: [ "/iwbep/cx_mgw_med_exception" ],
-			code: [
-				// TODO Move to some place else, but for now this is all the method does.
-				"APPEND VALUE #(",
-				"\tartifact_name = ''",
-				"\tartifact_type = ''",
-				"\tparent_artifact_name = ''",
-				"\tparent_artifact_type = ''",
-				"\ttext_symbol = ''",
-				") to rt_text_elements."
-			]
-		});
 
 		this._class?.publicSection?.methods?.push({
 			type: ABAPMethodType.MEMBER,
@@ -253,9 +212,6 @@ export default class ModelProviderClassGeneratorV2 implements IFCodeGenerator, I
 			// writer.writeLine("iv_key = 'unicode'");
 			// writer.writeLine("iv_value = 'false'");
 			// writer.decreaseIndent().writeLine(").");
-
-			// TODO: Labels
-			// lo_property->set_label_from_text_element( iv_text_element_symbol = '033' iv_text_element_container = gc_incl_name ). 			
 			
 			writer.writeLine();
 			writer.writeLine();
