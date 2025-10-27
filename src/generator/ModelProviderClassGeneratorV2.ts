@@ -163,7 +163,7 @@ export default class ModelProviderClassGeneratorV2 implements IFCodeGenerator, I
 					writer.writeLine("property->set_type_edm_datetime( ).");
 					break;
 				case CDSPrimitive.Timestamp:
-					writer.writeLine("property->set_type_edm_timestamp( ).");
+					writer.writeLine("property->set_type_edm_datetimeoffset( ).");
 					break;
 				case CDSPrimitive.String:
 					writer.writeLine("property->set_type_edm_string( ).");
@@ -191,8 +191,8 @@ export default class ModelProviderClassGeneratorV2 implements IFCodeGenerator, I
 			writer.writeLine(`property->set_creatable( ${readOnlyAbap} ).`);
 			writer.writeLine(`property->set_updatable( ${readOnlyAbap} ).`);
 			
-			const manditory = (<any>property)?.["@manditory"] ? "abap_false" : "abap_true";
-			writer.writeLine(`property->set_nullable( ${manditory} ).`);
+			const nullable = this._toAbapBool( !(<any>property)?.["notNull"] );
+			writer.writeLine(`property->set_nullable( ${nullable} ).`);
 			
 			// Documentation is sparse on this one...
 			if((<any>property)?.["@segw.sortable"]){
@@ -204,6 +204,11 @@ export default class ModelProviderClassGeneratorV2 implements IFCodeGenerator, I
 			if((<any>property)?.["@segw.filterable"]){
 				let abapBool = this._toAbapBool((<any>property)?.["@segw.filterable"]);
 				writer.writeLine(`property->set_filterable( ${abapBool} ).`);
+			}
+
+			if((<any>property)?.["@segw.conversion"]){
+				let abapBool = this._toAbapBool( !(<any>property)?.["@segw.conversion"]);
+				writer.writeLine(`property->set_no_conversion( ${abapBool} ).`);
 			}
 			
 			// TODO: Annotation
