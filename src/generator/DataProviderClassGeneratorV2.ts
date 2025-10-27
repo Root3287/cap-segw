@@ -11,7 +11,9 @@ import {
 } from "../types/abap";
 import CodeWriter from "./CodeWriter";
 
-import { entity } from "@sap/cds";
+import cds, { entity } from "@sap/cds";
+
+const LOG = cds.log("segw");
 
 export default class DataProviderClassGeneratorV2 implements IFCodeGenerator, IFServiceClassGenerator {
 	private _class: ABAPClass = { 
@@ -69,6 +71,10 @@ export default class DataProviderClassGeneratorV2 implements IFCodeGenerator, IF
 		let splitNamespace = entity.name.split(".");
 		let entityName = (<any>entity)?.["@segw.name"] ?? splitNamespace[splitNamespace.length-1];
 		let entityReturnType = `ZCL_MPC=>T_${entityName}`;
+		
+		if(entityName.length > 30){
+			LOG.warn(`Method ${entityName} too long. Consider shortening it with @segw.name`);
+		}
 
 		this._createEntity(entityName, entityReturnType);
 		this._deleteEntity(entityName, entityReturnType);

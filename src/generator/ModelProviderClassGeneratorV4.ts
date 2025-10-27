@@ -10,7 +10,9 @@ import {
 } from "../types/abap";
 import CodeWriter from "./CodeWriter";
 
-import { entity } from "@sap/cds";
+import cds, { entity } from "@sap/cds";
+
+const LOG = cds.log("segw");
 
 export default class ModelProviderClassGeneratorV4 implements IFCodeGenerator, IFServiceClassGenerator {
 	private _class: ABAPClass = { 
@@ -55,10 +57,20 @@ export default class ModelProviderClassGeneratorV4 implements IFCodeGenerator, I
 	public addEntity(entity: entity): void {
 		let splitNamespace = entity.name.split(".");
 		let entityName = (<any>entity)?.["@segw.name"] ?? splitNamespace[splitNamespace.length-1];
+
+		if(entityName.length > 128){
+			LOG.warn(`${entityName} too long. Consider shortening it with @segw.name`);
+		}
 		
+		const methodName = (<any>entity?.["@segw.mpc.define.name"]) ?? `define_${entityName}`;
+		
+		if(methodName > 30){
+			LOG.warn(`Method ${methodName} too long. Consider shortening it with @segw.mpc.define.name`);
+		}
+
 		let defineEntityMethod: ABAPMethod = {
 			type: ABAPMethodType.MEMBER,
-			name: `define_${entityName}`,
+			name: methodName,
 			importing: [
 				{
 					name: "io_model",

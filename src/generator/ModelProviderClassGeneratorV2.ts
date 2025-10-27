@@ -11,7 +11,9 @@ import {
 import { Primitive as CDSPrimitive } from "../types/cds";
 import CodeWriter from "./CodeWriter";
 
-import { entity, csn } from "@sap/cds";
+import cds, { entity } from "@sap/cds";
+
+const LOG = cds.log("segw");
 
 export default class ModelProviderClassGeneratorV2 implements IFCodeGenerator, IFServiceClassGenerator {
 	private _class: ABAPClass = { 
@@ -118,10 +120,20 @@ export default class ModelProviderClassGeneratorV2 implements IFCodeGenerator, I
 	public addEntity(entity: entity): void {
 		let splitNamespace = entity.name.split(".");
 		let entityName = (<any>entity)?.["@segw.name"] ?? splitNamespace[splitNamespace.length-1];
+
+		if(entityName.length > 128){
+			LOG.warn(`${entityName} too long. Consider shortening it with @segw.name`);
+		}
+		
+		const methodName = (<any>entity?.["@segw.mpc.define.name"]) ?? `define_${entityName}`;
+		
+		if(methodName > 30){
+			LOG.warn(`Method ${methodName} too long. Consider shortening it with @segw.mpc.define.name`);
+		}
 		
 		let defineEntityMethod: ABAPMethod = {
 			type: ABAPMethodType.MEMBER,
-			name: `define_${entityName}`,
+			name: methodName,
 			raising: [ "/iwbep/cx_mgw_med_exception"]
 		};
 
@@ -142,37 +154,64 @@ export default class ModelProviderClassGeneratorV2 implements IFCodeGenerator, I
 		writer.writeLine(`is_def_entity_set = abap_false`);
 		writer.decreaseIndent().writeLine(").").writeLine();
 
-		// Loop over properties
-		writer.writeLine("property = entity_type->create_property(").increaseIndent();
-		writer.writeLine("iv_property_name = ''");
-		writer.writeLine("iv_abap_fieldname = ''");
-		writer.decreaseIndent().writeLine(").");
-		// writer.writeLine("property->set_is_key( ).");
-		
-		// Types
-		// writer.writeLine("property->set_type_edm_datetime( ).");
-		// writer.writeLine("property->set_type_edm_string( ).");
-		// writer.writeLine("property->set_type_edm_boolean( ).");
-		// writer.writeLine("property->set_type_edm_decimal( ).");
-		
-		// Main OData Annotations
-		// writer.writeLine("property->set_precison( iv_precision = ).");
-		// writer.writeLine("property->set_maxlength( iv_max_length = ).");
-		// writer.writeLine("property->set_creatable( abap_false ).");
-		// writer.writeLine("property->set_updatable( abap_false ).");
-		// writer.writeLine("property->set_nullable( abap_false ).");
-		// writer.writeLine("property->set_sortable( abap_true ).");
-		// writer.writeLine("property->set_filterable( abap_false ).");
-		
-		// TODO: Annotation
-		// writer.writeLine("property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(").increaseIndent();
-	    // writer.writeLine("EXPORTING").increaseIndent();
-        // writer.writeLine("iv_key = 'unicode'");
-        // writer.writeLine("iv_value = 'false'");
-        // writer.decreaseIndent().writeLine(").");
+		for(let property of entity.elements){
+			// Loop over properties
+			writer.writeLine("property = entity_type->create_property(").increaseIndent();
+			writer.writeLine("iv_property_name = ''");
+			writer.writeLine("iv_abap_fieldname = ''");
+			writer.decreaseIndent().writeLine(").");
+			
+			if(property?.key)
+				writer.writeLine("property->set_is_key( ).");
+			
+			// const PrimativeLookup: Record<CDSPrimitive, (writer: CodeWriter) => void> = {
+			// 	[CDSPrimitive.UUID]: 		(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_guid( )."); },
+			// 	[CDSPrimitive.Boolean]: 	(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_boolean( )."); },
+			// 	[CDSPrimitive.Integer]: 	(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_int32( )."); },
+			// 	[CDSPrimitive.Int16]: 		(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_int16( )."); },
+			// 	[CDSPrimitive.Int32]: 		(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_int32( )."); },
+			// 	[CDSPrimitive.Int64]: 		(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_int64( )."); },
+			// 	[CDSPrimitive.UInt8]: 		(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_byte( )."); },
+			// 	[CDSPrimitive.Decimal]: 	(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_decimal( )."); },
+			// 	[CDSPrimitive.Double]: 		(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_double( )."); },
+			// 	[CDSPrimitive.Date]: 		(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_date( )."); },
+			// 	[CDSPrimitive.Time]: 		(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_time( )."); },
+			// 	[CDSPrimitive.DateTime]: 	(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_datetime( )."); },
+			// 	[CDSPrimitive.Timestamp]: 	(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_timestamp( )."); },
+			// 	[CDSPrimitive.String]: 		(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_string( )."); },
+			// 	[CDSPrimitive.Binary]: 		(writer: CodeWriter) => { writer.writeLine("property->set_type_edm_binary( )."); },
+			// 	[CDSPrimitive.LargeBinary]: (writer: CodeWriter) => { writer.writeLine("property->set_type_edm_binary( )."); },
+			// 	[CDSPrimitive.LargeString]: (writer: CodeWriter) => { writer.writeLine("property->set_type_edm_string( )."); },
+			// 	[CDSPrimitive.Map]: 		(writer: CodeWriter) => { /* NOT SUPPORTED */ },
+			// 	[CDSPrimitive.Vector]: 		(writer: CodeWriter) => { /* NOT SUPPORTED */ },
+			// };
+			// PrimativeLookup[<CDSPrimitive>property.type](writer);
+			
+			// Main OData Annotations
+			
+			// writer.writeLine("property->set_precison( iv_precision = ).");
+			if((<any>property)?.length)
+				writer.writeLine(`property->set_maxlength( iv_max_length = ${(<any>property)?.length} ).`);
+			
+			writer.writeLine("property->set_creatable( abap_false ).");
+			writer.writeLine("property->set_updatable( abap_false ).");
+			writer.writeLine("property->set_nullable( abap_false ).");
+			
+			// if(property?.sortable)
+			// 	writer.writeLine("property->set_sortable( abap_true ).");
+			// if(property?.filterable)
+			// 	writer.writeLine("property->set_filterable( abap_false ).");
+			
+			// TODO: Annotation
+			// writer.writeLine("property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(").increaseIndent();
+			// writer.writeLine("EXPORTING").increaseIndent();
+			// writer.writeLine("iv_key = 'unicode'");
+			// writer.writeLine("iv_value = 'false'");
+			// writer.decreaseIndent().writeLine(").");
 
-        // TODO: Labels
-        // lo_property->set_label_from_text_element( iv_text_element_symbol = '033' iv_text_element_container = gc_incl_name ). 
+			// TODO: Labels
+			// lo_property->set_label_from_text_element( iv_text_element_symbol = '033' iv_text_element_container = gc_incl_name ). 			
+		}
 		
 		writer.writeLine();
 		writer.writeLine("entity_set = entity_type->create_entity_set( '' ).").writeLine();

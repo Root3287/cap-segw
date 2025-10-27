@@ -1,6 +1,7 @@
 import ModelProviderClassGeneratorV4 from "../src/generator/ModelProviderClassGeneratorV4";
 
-import { entity } from "@sap/cds";
+import cds, { entity } from "@sap/cds";
+const LOG = cds.log("segw");
 
 describe("MVC-V4", () => {
 	let mpc: ABAPGenerator;
@@ -25,5 +26,17 @@ describe("MVC-V4", () => {
 		const code = mpc.generate();
 		console.log(code);
 		expect(code).not.toBeNull();
+	});
+
+	test("Entity Name Too Long", () => {
+		const logSpy = jest.spyOn(LOG, 'warn');
+		let entity: entity = {
+			name: "A".repeat(140),
+		};
+		mpc.addEntity(entity);
+
+		const code = mpc.generate();
+		expect(code).not.toBeNull();
+		expect(logSpy).toHaveBeenCalled();
 	});
 });

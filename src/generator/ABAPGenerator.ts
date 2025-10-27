@@ -132,7 +132,7 @@ export default class ABAPGenerator implements IFCodeGenerator {
 	private _writeMethodDefinition(method: ABAP.Method): void {
 		this._writer.increaseIndent();
 
-		let methodDefinition = `${method.type}S ${method.name.substring(0,30)}`;
+		let methodDefinition = `${method.type}S ${method.name}`;
 		if(method.isRedefinition) methodDefinition += " REDEFINITION.";
 		if(method.isFinal) methodDefinition += " FINAL";
 		this._writer.writeLine(methodDefinition);
@@ -216,7 +216,7 @@ export default class ABAPGenerator implements IFCodeGenerator {
 	 * @param {ABAPMethod} method Method to write
 	 */
 	private _writeMethodImplementation(method: ABAP.Method): void {
-		this._writer.writeLine(`METHOD ${method.name.substring(0,30)}.`).increaseIndent();
+		this._writer.writeLine(`METHOD ${method.name}.`).increaseIndent();
 		method?.code?.forEach((c) => {
 			this._writer.writeLine(c);
 		})
