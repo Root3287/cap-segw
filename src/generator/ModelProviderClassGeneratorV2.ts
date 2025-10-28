@@ -58,7 +58,7 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 
 	public addEntity(entity: entity): void {
 		let splitNamespace = entity.name.split(".");
-		let entityName = (<any>entity)?.["@segw.name"] ?? splitNamespace[splitNamespace.length-1];
+		let entityName = ABAPUtils.getABAPName(entity);
 
 		if(entityName.length > 128){
 			LOG.warn(`${entityName} too long. Consider shortening it with @segw.name`);
