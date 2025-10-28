@@ -66,9 +66,11 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 	}
 
 	public addEntity(entity: entity): void {
-		let splitNamespace = entity.name.split(".");
-		let entityName = (<any>entity)?.["@segw.name"] ?? splitNamespace[splitNamespace.length-1];
-		let entityReturnType = `ZCL_MPC=>T_${entityName}`;
+		let entityName = ABAPUtils.getABAPName(entity);
+
+		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
+		const service = this._compilerInfo?.csn.services[namespace];
+		let entityReturnType = `ZCL_${ABAPUtils.getABAPName(service)}_MPC=>T_${entityName}`;
 		
 		if(entityName.length > 30){
 			LOG.warn(`Method ${entityName} too long. Consider shortening it with @segw.name`);
@@ -92,6 +94,8 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
 		const services = this._compilerInfo?.csn.services[namespace];
 		let generator = new ABAPGenerator();
+
+		this._class.name = this.getFileName().split('.')[0];
 
 		// TODO: Generate Types
 		
