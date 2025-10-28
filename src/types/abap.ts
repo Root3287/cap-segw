@@ -1,3 +1,20 @@
+export enum Primitive {
+	UUID = "sysuuid_x",
+	BOOLEAN = "abap_bool",
+	INTEGER = "i",
+	INT16 = "/iwbep/sb_odata_ty_int2",
+	INT36 = "i",
+	INT64 = "INT8",
+	UINT8 = "/iwbep/sb_odata_ty_int2",
+	DECIMAL = "P", // length 16 decimals 0
+	DOUBLE = "F",
+	DATE = "D",
+	TIME = "T",
+	TIMESTAMP = "TIMESTAMP",
+	STRING = "STRING",
+	BINARY = "XSTRING",
+};
+
 export enum MethodType {
 	STATIC = "CLASS-METHOD",
 	MEMBER = "METHOD",
