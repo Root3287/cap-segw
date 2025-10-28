@@ -3,7 +3,7 @@ export enum Primitive {
 	BOOLEAN = "abap_bool",
 	INTEGER = "i",
 	INT16 = "/iwbep/sb_odata_ty_int2",
-	INT36 = "i",
+	INT32 = "i",
 	INT64 = "INT8",
 	UINT8 = "/iwbep/sb_odata_ty_int2",
 	DECIMAL = "P", // length 16 decimals 0
