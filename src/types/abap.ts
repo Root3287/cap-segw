@@ -72,6 +72,7 @@ export enum ClassSectionType {
 export type ClassSection = {
 	type: ClassSectionType;
 	structures?: Structure[];
+	typeAlias?: Parameter[];
 	tables?: Table[];
 	parameters?: Parameter[];
 	methods?: Method[];

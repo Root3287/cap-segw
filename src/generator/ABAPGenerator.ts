@@ -60,6 +60,12 @@ export default class ABAPGenerator implements IFCodeGenerator {
 			this._writer.writeLine();
 		});
 
+		// Write Type Alias
+		section?.typeAlias?.forEach((alias) => {
+			this._writeTypeAlias(alias);
+			this._writer.writeLine();
+		})
+
 		// Table Types
 		section?.tables?.forEach((table) => {
 			this._writeTableType(table);
@@ -81,6 +87,7 @@ export default class ABAPGenerator implements IFCodeGenerator {
 
 	/**
 	 * Write internal structure type
+	 * 
 	 * @param {ABAPStructure} structure structure to write
 	 */
 	private _writeStructure(structure: ABAP.Structure){
@@ -93,6 +100,14 @@ export default class ABAPGenerator implements IFCodeGenerator {
 		});
 		this._writer.decreaseIndent().writeLine(`END OF ${structure.name}.`);
 		this._writer.decreaseIndent();
+	}
+
+	/**
+	 * Write type alias
+	 * @param {Parameter} alias Type Alias to write
+	 */
+	private _writeTypeAlias(alias: ABAP.Parameter){
+		this._writer.writeLine(`TYPES: ${alias.name} ${alias.referenceType} ${alias.type}.`);
 	}
 
 	/**

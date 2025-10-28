@@ -24,6 +24,7 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		publicSection: {
 			type: ABAPClassSectionType.PUBLIC,
 			structures: [],
+			typeAlias: [],
 			tables: [],
 			methods: [],
 		},
