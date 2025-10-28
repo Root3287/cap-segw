@@ -8,7 +8,6 @@ describe("MVC-V4", () => {
 	
 	beforeEach(() => {
 		mpc = new ModelProviderClassGeneratorV4();
-		mpc.setClassName("ZTEST_MPC");
 	})
 
 	test("Basic Print Out", () => {
