@@ -88,8 +88,6 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		// this._class?.protectedSection?.methods?.push(defineEntityMethod);
 	};
 
-	public addStruct(struct: struct): void { }
-
 	public generate(): string {
 		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
 		const services = this._compilerInfo?.csn.services[namespace];

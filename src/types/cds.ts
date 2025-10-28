@@ -18,4 +18,6 @@ export enum Primitive {
 	LargeString = 'cds.LargeString',
 	Map = 'cds.Map',
 	Vector = 'cds.Vector',
+	Composition = 'cds.Composition',
+	Association = 'cds.Association',
 };

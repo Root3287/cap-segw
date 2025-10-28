@@ -25,8 +25,6 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 
 	public addEntity(entity: entity): void {};
 
-	public addStruct(struct: struct): void { }
-
 	public generate(): string {
 		let generator = new ABAPGenerator();
 		generator.setABAPClass(this._class);

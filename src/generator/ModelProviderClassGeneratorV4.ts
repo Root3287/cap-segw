@@ -124,8 +124,6 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 		this._class?.protectedSection?.methods?.push(defineEntityMethod);
 	};
 
-	public addStruct(struct: struct): void { }
-
 	public generate(): string {
 		let generator = new ABAPGenerator();
 		generator.setABAPClass(this._class);

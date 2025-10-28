@@ -168,7 +168,7 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 				default:
 					let propertyPrototype = Object.getPrototypeOf(property);
 					if(propertyPrototype.kind === "type"){
-						this.addStruct(propertyPrototype);
+						// this.addStruct(propertyPrototype);
 					}
 					
 					break;
@@ -251,59 +251,6 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		this._entityDefineMethods.push(defineEntityMethod.name);
 		this._class?.protectedSection?.methods?.push(defineEntityMethod);
 	};
-
-	public addStruct(struct: struct): void { 
-		// Check if this already exists
-		let splitNamespace = entity.name.split(".");
-		let structName = (<any>entity)?.["@segw.name"] ?? splitNamespace[splitNamespace.length-1];
-		let abapStructName = `t_${structName}`;
-		let exists = this._class?.publicSection?.structures?.find((abapStruct) => abapStruct.name === abapStructName);
-		if(exists) return; // Already added, nothing to do here.
-
-		for(let element of struct.elements){
-			switch(element.type){
-				case CDSPrimitive.UUID:
-					break;
-				case CDSPrimitive.Boolean:
-					break;
-				case CDSPrimitive.Integer:
-					break;
-				case CDSPrimitive.Int16:
-					break;
-				case CDSPrimitive.Int32:
-					break;
-				case CDSPrimitive.Int64:
-					break;
-				case CDSPrimitive.UInt8:
-					break;
-				case CDSPrimitive.Decimal:
-					break;
-				case CDSPrimitive.Double:
-					break;
-				case CDSPrimitive.Date:
-					break;
-				case CDSPrimitive.Time:
-					break;
-				case CDSPrimitive.DateTime:
-					break;
-				case CDSPrimitive.Timestamp:
-					break;
-				case CDSPrimitive.String:
-					break;
-				case CDSPrimitive.Binary:
-					break;
-				case CDSPrimitive.LargeBinary:
-					break;
-				case CDSPrimitive.LargeString:
-					break;
-				case CDSPrimitive.Composition:
-				case CDSPrimitive.Association:
-					break;
-				default:
-					break;
-			}
-		}
-	}
 
 	public generate(): string {
 		const namespace = Object.keys(this._compilerInfo?.csdl)[3];

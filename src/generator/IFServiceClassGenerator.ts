@@ -6,5 +6,4 @@ export default interface IFServiceClassGenerator extends IFCodeGenerator {
 	setCompilerInfo(compilerInfo: CompilerInfo): void;
 	getFileName(): void;
 	addEntity(entity: entity): void;
-	addStruct(struct: struct): void;
 };
