@@ -118,7 +118,7 @@ export default class ABAPGenerator implements IFCodeGenerator {
 	private _writeTableType(table: ABAP.Table){
 		table.key ??= "";
 		this._writer.increaseIndent();
-		this._writer.writeLine(`TYPE ${table.structure.name} ${table.structure.referenceType} ${table.structure.type} ${table.key}.`);
+		this._writer.writeLine(`TYPES: ${table.structure.name} ${table.structure.referenceType} ${table.structure.type} ${table.key}.`);
 		this._writer.decreaseIndent();
 	}
 
