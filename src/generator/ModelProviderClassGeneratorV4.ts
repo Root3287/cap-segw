@@ -47,7 +47,9 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 	}
 
 	public getFileName(): string { 
-		return `ZCL_${ABAPUtils.getABAPName(this._compilerInfo?.csn)}_MPC`;
+		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
+		const service = this._compilerInfo?.csn.services[namespace];
+		return `ZCL_${ABAPUtils.getABAPName(service)}_MPC.abap`;
 	}
 
 	public addEntity(entity: entity): void {

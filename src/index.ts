@@ -52,10 +52,6 @@ function compileMultiple(compilerInfo: CompilerInfo): OutputData[] {
 };
 
 function compileSingle(compilerInfo: CompilerInfo): OutputData[]{
-	const namespace = Object.keys(compilerInfo.csdl)[3];
-	const namespaceContainer = compilerInfo.csdl[namespace];
-	const csnService = compilerInfo.csn.services[namespace];
-	const namespaceSplit = namespace.split(".");
 
 	let odataVersion = parseInt(compilerInfo.options?.["odata-version"] ?? "4");
 

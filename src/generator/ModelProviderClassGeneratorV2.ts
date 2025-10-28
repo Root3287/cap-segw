@@ -38,7 +38,6 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 	};
 
 	private _entityDefineMethods: string[] = [];
-	private _namespace: string = "";
 
 	private _compilerInfo?: CompilerInfo;
 
@@ -50,8 +49,10 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		this._compilerInfo = compilerInfo;
 	}
 
-	public getFileName(): string { 
-		return `ZCL_${ABAPUtils.getABAPName(this._compilerInfo?.csn)}_MPC.abap`;
+	public getFileName(): string {
+		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
+		const service = this._compilerInfo?.csn.services[namespace];
+		return `ZCL_${ABAPUtils.getABAPName(service)}_MPC.abap`;
 	}
 
 	public addEntity(entity: entity): void {
@@ -243,6 +244,8 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 	}
 
 	public generate(): string {
+		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
+		const services = this._compilerInfo?.csn.services[namespace];
 		let generator = new ABAPGenerator();
 
 		// TODO: Generate Types
@@ -255,7 +258,7 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 			name: "define",
 			isRedefinition: true,
 			code: [
-				`model->set_schema_namespace( |${this._namespace}| ).`,
+				`model->set_schema_namespace( |${namespace}| ).`,
 				"",
 				...this._entityDefineMethods.map((method) => `me->${method}( io_model ).`),
 				"me->define_associations( ).",
