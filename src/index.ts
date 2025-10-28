@@ -1,25 +1,11 @@
 import cds, { csn, EDM, linked } from "@sap/cds";
+import { CompilerInfo, OutputData } from "./types/frontend";
 import ModelProviderClassGeneratorV4 from "./generator/ModelProviderClassGeneratorV4";
 import ModelProviderClassGeneratorV2 from "./generator/ModelProviderClassGeneratorV2";
 import DataProviderClassGeneratorV4 from "./generator/DataProviderClassGeneratorV4";
 import DataProviderClassGeneratorV2 from "./generator/DataProviderClassGeneratorV2";
 
 const LOG = cds.log("segw");
-
-type GeneratorOptions = {
-	outputDirectory: string;
-};
-
-interface OutputData {
-	filename: string;
-	code: string;
-};
-
-interface CompilerInfo {
-	csn: linked.LinkedCSN;
-	csdl: any;
-	options ?: any;
-};
 
 export default (csn: csn.CSN, options: any) => {
 	// Group by Service
