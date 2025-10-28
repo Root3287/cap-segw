@@ -8,6 +8,7 @@ import {
 	MethodType as ABAPMethodType, 
 	ParameterReferenceType as ABAPParameterReferenceType
 } from "../types/abap";
+import { CompilerInfo } from "../types/frontend";
 import CodeWriter from "./CodeWriter";
 
 import cds, { entity } from "@sap/cds";
@@ -34,6 +35,8 @@ export default class ModelProviderClassGeneratorV4 implements IFCodeGenerator, I
 
 	private _entityDefineMethods: string[] = [];
 
+	private _compilerInfo?: CompilerInfo;
+
 	public constructor(){
 		this._class.interfaces?.push("/iwbep/cl_v4_abs_model_prov");
 	}
@@ -50,6 +53,10 @@ export default class ModelProviderClassGeneratorV4 implements IFCodeGenerator, I
 		});
 
 		return generator.generate();
+	}
+
+	public setCompilerInfo(compilerInfo: CompilerInfo): void {
+		this._compilerInfo = compilerInfo;
 	}
 
 	public setClassName(name: string): void { this._class.name = name; }

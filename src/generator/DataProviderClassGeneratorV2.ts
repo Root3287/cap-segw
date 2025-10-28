@@ -9,6 +9,7 @@ import {
 	ParameterType as ABAPParameterType,
 	ParameterReferenceType as ABAPParameterReferenceType
 } from "../types/abap";
+import { CompilerInfo } from "../types/frontend";
 import CodeWriter from "./CodeWriter";
 
 import cds, { entity } from "@sap/cds";
@@ -40,6 +41,8 @@ export default class DataProviderClassGeneratorV2 implements IFCodeGenerator, IF
 	private _entityDefineMethods: string[] = [];
 	private _namespace: string = "";
 
+	private _compilerInfo?: CompilerInfo;
+
 	public constructor(){
 		this._class?.interfaces?.push("/IWBEP/IF_SB_DPC_COMM_SERVICES");
 		this._class?.interfaces?.push("/IWBEP/IF_SB_GEN_DPC_INJECTION");
@@ -63,6 +66,10 @@ export default class DataProviderClassGeneratorV2 implements IFCodeGenerator, IF
 		this._handleDeleteEntity();
 
 		return generator.generate();
+	}
+
+	public setCompilerInfo(compilerInfo: CompilerInfo): void {
+		this._compilerInfo = compilerInfo;
 	}
 
 	public setClassName(name: string): void { this._class.name = name; }
