@@ -96,6 +96,7 @@ export default class ABAPGenerator implements IFCodeGenerator {
 		structure.parameters?.forEach((parameter) => {
 			let line = `${parameter.name} ${parameter.referenceType} ${parameter.type}`;
 			if(parameter?.length) line += ` length ${parameter.length}`;
+			if(parameter?.decimal) line += ` decimal ${parameter.decimal}`;
 			this._writer.writeLine(`${line},`);
 		});
 		this._writer.decreaseIndent().writeLine(`END OF ${structure.name}.`);

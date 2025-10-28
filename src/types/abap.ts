@@ -67,6 +67,7 @@ export type Parameter = {
 	referenceType: ParameterReferenceType;
 	type: string;
 	length?: number;
+	decimal ?: number;
 	value ?: string;
 };
 
