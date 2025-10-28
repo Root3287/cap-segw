@@ -1,4 +1,3 @@
-import IFCodeGenerator from "./IFCodeGenerator";
 import IFServiceClassGenerator from "./IFServiceClassGenerator";
 import ABAPGenerator from "./ABAPGenerator";
 import { 
@@ -11,12 +10,13 @@ import {
 } from "../types/abap";
 import { CompilerInfo } from "../types/frontend";
 import CodeWriter from "./CodeWriter";
+import { ABAP as ABAPUtils } from "../utils/ABAP";
 
-import cds, { entity } from "@sap/cds";
+import cds, { entity, struct } from "@sap/cds";
 
 const LOG = cds.log("segw");
 
-export default class DataProviderClassGeneratorV2 implements IFCodeGenerator, IFServiceClassGenerator {
+export default class DataProviderClassGeneratorV2 implements IFServiceClassGenerator {
 	private _class: ABAPClass = { 
 		name: "",
 		inheriting: ["/iwbep/cl_mgw_push_abs_data"],
@@ -55,24 +55,13 @@ export default class DataProviderClassGeneratorV2 implements IFCodeGenerator, IF
 		});
 	}
 
-	public generate(): string {
-		let generator = new ABAPGenerator();
-		generator.setABAPClass(this._class);
-
-		this._handleGetEntitySet();
-		this._handleGetEntity();
-		this._handleUpdateEntity();
-		this._handleCreateEntity();
-		this._handleDeleteEntity();
-
-		return generator.generate();
-	}
-
 	public setCompilerInfo(compilerInfo: CompilerInfo): void {
 		this._compilerInfo = compilerInfo;
 	}
 
-	public setClassName(name: string): void { this._class.name = name; }
+	public getFileName(): string { 
+		return `ZCL_${ABAPUtils.getABAPName(this._compilerInfo?.csn)}_DPC`;
+	}
 
 	public addEntity(entity: entity): void {
 		let splitNamespace = entity.name.split(".");
@@ -94,6 +83,21 @@ export default class DataProviderClassGeneratorV2 implements IFCodeGenerator, IF
 		// this._entityDefineMethods.push(defineEntityMethod.name);
 		// this._class?.protectedSection?.methods?.push(defineEntityMethod);
 	};
+
+	public addStruct(struct: struct): void { }
+
+	public generate(): string {
+		let generator = new ABAPGenerator();
+		generator.setABAPClass(this._class);
+
+		this._handleGetEntitySet();
+		this._handleGetEntity();
+		this._handleUpdateEntity();
+		this._handleCreateEntity();
+		this._handleDeleteEntity();
+
+		return generator.generate();
+	}
 
 	/**
 	 * Write the method for `entity_create_entity`

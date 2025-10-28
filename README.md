@@ -30,9 +30,7 @@ Since there are some annotations that are not present in CDS but can be set on S
 | `@segw.subscribable`    | Allows to be subscribable     |   `boolean`  |
 | `@segw.filter_required` | Filtered is required          |   `boolean`  |
 | `@segw.abap.name`       | ABAP Field Name Override      |   `string`   |
-| `@segw.mpc.class`       | MPC Class Name                |   `string`   |
 | `@segw.mpc.define.name` | MPC Define Entity Method Name |   `string`   |
-| `@segw.dpc.class`       | DPC Class Name                |   `string`   |
 
 
 ## Installation

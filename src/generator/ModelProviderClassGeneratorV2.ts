@@ -1,4 +1,3 @@
-import IFCodeGenerator from "./IFCodeGenerator";
 import IFServiceClassGenerator from "./IFServiceClassGenerator";
 import ABAPGenerator from "./ABAPGenerator"; 
 import { 
@@ -12,11 +11,13 @@ import { CompilerInfo } from "../types/frontend";
 import { Primitive as CDSPrimitive } from "../types/cds";
 import CodeWriter from "./CodeWriter";
 
-import cds, { entity } from "@sap/cds";
+import { ABAP as ABAPUtils } from "../utils/ABAP";
+
+import cds, { entity, struct } from "@sap/cds";
 
 const LOG = cds.log("segw");
 
-export default class ModelProviderClassGeneratorV2 implements IFCodeGenerator, IFServiceClassGenerator {
+export default class ModelProviderClassGeneratorV2 implements IFServiceClassGenerator {
 	private _class: ABAPClass = { 
 		name: "",
 		inheriting: ["/iwbep/cl_mgw_push_abs_model"],
@@ -42,46 +43,16 @@ export default class ModelProviderClassGeneratorV2 implements IFCodeGenerator, I
 	private _compilerInfo?: CompilerInfo;
 
 	public constructor(){
-	}
-
-	public generate(): string {
-		let generator = new ABAPGenerator();
-		generator.setABAPClass(this._class);
-
-		this._class?.publicSection?.methods?.push({
-			type: ABAPMethodType.MEMBER,
-			name: "define",
-			isRedefinition: true,
-			code: [
-				`model->set_schema_namespace( |${this._namespace}| ).`,
-				"",
-				...this._entityDefineMethods.map((method) => `me->${method}( io_model ).`),
-				"me->define_associations( ).",
-			],
-		});
-
-		this._class?.publicSection?.methods?.push({
-			type: ABAPMethodType.MEMBER,
-			name: "get_last_modified",
-			isRedefinition: true,
-			code: [
-				// TODO: UPDATE DATE TIME
-				"CONSTANTS: lc_gen_date_time TYPE VALUE '20250919151019'.",
-				"rv_last_modified = super->get_last_modified( ).",
-				"IF rv_last_modified LT lc_gen_date_time.",
-				"\trv_last_modified = lc_gen_date_time.",
-				"ENDIF."
-			]
-		})
-
-		return generator.generate();
+	
 	}
 
 	public setCompilerInfo(compilerInfo: CompilerInfo): void {
 		this._compilerInfo = compilerInfo;
 	}
 
-	public setClassName(name: string): void { this._class.name = name; }
+	public getFileName(): string { 
+		return `ZCL_${ABAPUtils.getABAPName(this._compilerInfo?.csn)}_MPC.abap`;
+	}
 
 	public addEntity(entity: entity): void {
 		let splitNamespace = entity.name.split(".");
@@ -184,7 +155,15 @@ export default class ModelProviderClassGeneratorV2 implements IFCodeGenerator, I
 				case CDSPrimitive.LargeString:
 					writer.writeLine("property->set_type_edm_string( ).");
 					break;
+				case CDSPrimitive.Composition:
+				case CDSPrimitive.Association:
+					break;
 				default:
+					let propertyPrototype = Object.getPrototypeOf(property);
+					if(propertyPrototype.kind === "type"){
+						this.addStruct(propertyPrototype);
+					}
+					
 					break;
 			}
 			
@@ -194,27 +173,27 @@ export default class ModelProviderClassGeneratorV2 implements IFCodeGenerator, I
 				writer.writeLine(`property->set_maxlength( iv_max_length = ${(<any>property)?.length} ).`);
 			
 			const readOnly = ((<any>entity)?.["@readonly"] || (<any>property)?.["@readonly"]);
-			let readOnlyAbap = this._toAbapBool(!readOnly);
+			let readOnlyAbap = ABAPUtils.toABAPBool(!readOnly);
 			writer.writeLine(`property->set_creatable( ${readOnlyAbap} ).`);
 			writer.writeLine(`property->set_updatable( ${readOnlyAbap} ).`);
 			
-			const nullable = this._toAbapBool( !(<any>property)?.["notNull"] );
+			const nullable = ABAPUtils.toABAPBool( !(<any>property)?.["notNull"] );
 			writer.writeLine(`property->set_nullable( ${nullable} ).`);
 			
 			// Documentation is sparse on this one...
 			if((<any>property)?.["@segw.sortable"]){
-				let abapBool = this._toAbapBool((<any>property)?.["@segw.sortable"]);
+				let abapBool = ABAPUtils.toABAPBool((<any>property)?.["@segw.sortable"]);
 				writer.writeLine(`property->set_sortable( ${abapBool} ).`);
 			}
 			
 			// Documentation is sparse on this one..
 			if((<any>property)?.["@segw.filterable"]){
-				let abapBool = this._toAbapBool((<any>property)?.["@segw.filterable"]);
+				let abapBool = ABAPUtils.toABAPBool((<any>property)?.["@segw.filterable"]);
 				writer.writeLine(`property->set_filterable( ${abapBool} ).`);
 			}
 
 			if((<any>property)?.["@segw.conversion"]){
-				let abapBool = this._toAbapBool( !(<any>property)?.["@segw.conversion"]);
+				let abapBool = ABAPUtils.toABAPBool( !(<any>property)?.["@segw.conversion"]);
 				writer.writeLine(`property->set_no_conversion( ${abapBool} ).`);
 			}
 			
@@ -232,26 +211,26 @@ export default class ModelProviderClassGeneratorV2 implements IFCodeGenerator, I
 		writer.writeLine();
 		writer.writeLine("entity_set = entity_type->create_entity_set( '' ).").writeLine();
 		
-		let readOnlyAbap = this._toAbapBool(!(<any>entity)?.["@readonly"]);
+		let readOnlyAbap = ABAPUtils.toABAPBool(!(<any>entity)?.["@readonly"]);
 		writer.writeLine(`entity_set->set_creatable( ${readOnlyAbap} ).`);
 		writer.writeLine(`entity_set->set_updatable( ${readOnlyAbap} ).`);
 		writer.writeLine(`entity_set->set_deletable( ${readOnlyAbap} ).`);
 		writer.writeLine();
 		
 		if((<any>entity)?.["@segw.pageable"]){
-			writer.writeLine(`entity_set->set_pageable( ${this._toAbapBool((<any>entity)?.["@segw.sortable"])} ).`);
+			writer.writeLine(`entity_set->set_pageable( ${ABAPUtils.toABAPBool((<any>entity)?.["@segw.sortable"])} ).`);
 		}
 		if((<any>entity)?.["@segw.addressable"]){
-			writer.writeLine(`entity_set->set_addressable( ${this._toAbapBool((<any>entity)?.["@segw.addressable"])} ).`);
+			writer.writeLine(`entity_set->set_addressable( ${ABAPUtils.toABAPBool((<any>entity)?.["@segw.addressable"])} ).`);
 		}
 		if((<any>entity)?.["@segw.ftxt_search"]){
-			writer.writeLine(`entity_set->set_has_ftxt_search( ${this._toAbapBool((<any>entity)?.["@segw.ftxt_search"])} ).`);
+			writer.writeLine(`entity_set->set_has_ftxt_search( ${ABAPUtils.toABAPBool((<any>entity)?.["@segw.ftxt_search"])} ).`);
 		}
 		if((<any>entity)?.["@segw.subscribable"]){
-			writer.writeLine(`entity_set->set_subscribable( ${this._toAbapBool((<any>entity)?.["@segw.subscribable"])} ).`);
+			writer.writeLine(`entity_set->set_subscribable( ${ABAPUtils.toABAPBool((<any>entity)?.["@segw.subscribable"])} ).`);
 		}
 		if((<any>entity)?.["@segw.filter_required"]){
-			writer.writeLine(`entity_set->set_filter_required( ${this._toAbapBool((<any>entity)?.["@segw.filter_required"])} ).`);
+			writer.writeLine(`entity_set->set_filter_required( ${ABAPUtils.toABAPBool((<any>entity)?.["@segw.filter_required"])} ).`);
 		}
 		writer.writeLine();
 
@@ -260,7 +239,44 @@ export default class ModelProviderClassGeneratorV2 implements IFCodeGenerator, I
 		this._class?.protectedSection?.methods?.push(defineEntityMethod);
 	};
 
-	private _toAbapBool(value: boolean): string {
-		return (value) ? "abap_true" : "abap_false";
+	public addStruct(struct: struct): void { 
+	}
+
+	public generate(): string {
+		let generator = new ABAPGenerator();
+
+		// TODO: Generate Types
+		
+		// Generate defines
+		// this._compilerInfo.csn.entities.forEach((entity) => { this.addEntity(entity); });
+
+		this._class?.publicSection?.methods?.push({
+			type: ABAPMethodType.MEMBER,
+			name: "define",
+			isRedefinition: true,
+			code: [
+				`model->set_schema_namespace( |${this._namespace}| ).`,
+				"",
+				...this._entityDefineMethods.map((method) => `me->${method}( io_model ).`),
+				"me->define_associations( ).",
+			],
+		});
+
+		this._class?.publicSection?.methods?.push({
+			type: ABAPMethodType.MEMBER,
+			name: "get_last_modified",
+			isRedefinition: true,
+			code: [
+				// TODO: UPDATE DATE TIME
+				"CONSTANTS: lc_gen_date_time TYPE VALUE '20250919151019'.",
+				"rv_last_modified = super->get_last_modified( ).",
+				"IF rv_last_modified LT lc_gen_date_time.",
+				"\trv_last_modified = lc_gen_date_time.",
+				"ENDIF."
+			]
+		})
+
+		generator.setABAPClass(this._class);
+		return generator.generate();
 	}
 }

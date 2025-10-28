@@ -1,8 +1,10 @@
-import { entity } from "@sap/cds";
+import { entity, struct } from "@sap/cds";
 import { CompilerInfo } from "../types/frontend";
+import IFCodeGenerator from "./IFCodeGenerator";
 
-export default interface IFServiceClassGenerator {
+export default interface IFServiceClassGenerator extends IFCodeGenerator {
 	setCompilerInfo(compilerInfo: CompilerInfo): void;
-	setClassName(name: string): void;
+	getFileName(): void;
 	addEntity(entity: entity): void;
+	addStruct(struct: struct): void;
 };

@@ -1,5 +1,6 @@
 import cds, { csn, EDM, linked } from "@sap/cds";
 import { CompilerInfo, OutputData } from "./types/frontend";
+import IFServiceClassGenerator from "./generator/IFCodeGenerator";
 import ModelProviderClassGeneratorV4 from "./generator/ModelProviderClassGeneratorV4";
 import ModelProviderClassGeneratorV2 from "./generator/ModelProviderClassGeneratorV2";
 import DataProviderClassGeneratorV4 from "./generator/DataProviderClassGeneratorV4";
@@ -58,26 +59,22 @@ function compileSingle(compilerInfo: CompilerInfo): OutputData[]{
 
 	let odataVersion = parseInt(compilerInfo.options?.["odata-version"] ?? "4");
 
-	let classNames = {
-		mpc: (<any>csnService)?.["@segw.class.mpc"] ?? `ZCL_${namespaceSplit[namespaceSplit.length - 1].toUpperCase()}_MPC`,
-		dpc: (<any>csnService)?.["@segw.class.dpc"] ?? `ZCL_${namespaceSplit[namespaceSplit.length - 1].toUpperCase()}_DPC`,
-	};
-
-	let mpcGenerator = (odataVersion === 4) ? new ModelProviderClassGeneratorV4() : new ModelProviderClassGeneratorV2();
-	let dpcGenerator = (odataVersion === 4) ? new DataProviderClassGeneratorV4() : new DataProviderClassGeneratorV2();
-
-	mpcGenerator.setClassName(classNames.mpc);
-	dpcGenerator.setClassName(classNames.dpc);
-
-	for(let entityType of csnService.entities){
-		mpcGenerator.addEntity(entityType);
-		dpcGenerator.addEntity(entityType);
-	}
-
-	return [
-		{filename: `${classNames.mpc}.abap`, code: mpcGenerator.generate() },
-		{filename: `${classNames.dpc}.abap`, code: dpcGenerator.generate() }
+	// Go Home Typescript, you're drunk
+	let generators: IFServiceClassGenerator[] = [
+		(odataVersion == 2) ? new ModelProviderClassGeneratorV2() : new ModelProviderClassGeneratorV4(),
+		(odataVersion == 2) ? new DataProviderClassGeneratorV2() : new DataProviderClassGeneratorV4()
 	];
+
+	generators.forEach((generator: IFServiceClassGenerator) => {
+		(<any>generator).setCompilerInfo(compilerInfo)
+	});
+
+	return generators.map((generator: IFServiceClassGenerator) => {
+		return { 
+			filename: (<any>generator).getFileName(), 
+			code: (<any>generator).generate() 
+		};
+	});
 }
 
 function* _iterate(generatedClasses: OutputData[]){

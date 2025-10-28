@@ -1,4 +1,3 @@
-import IFCodeGenerator from "./IFCodeGenerator";
 import IFServiceClassGenerator from "./IFServiceClassGenerator";
 import ABAPGenerator from "./ABAPGenerator";
 import { 
@@ -11,11 +10,13 @@ import {
 import { CompilerInfo } from "../types/frontend";
 import CodeWriter from "./CodeWriter";
 
-import cds, { entity } from "@sap/cds";
+import { ABAP as ABAPUtils } from "../utils/ABAP";
+
+import cds, { entity, struct } from "@sap/cds";
 
 const LOG = cds.log("segw");
 
-export default class ModelProviderClassGeneratorV4 implements IFCodeGenerator, IFServiceClassGenerator {
+export default class ModelProviderClassGeneratorV4 implements IFServiceClassGenerator {
 	private _class: ABAPClass = { 
 		name: "",
 		interfaces: [],
@@ -41,25 +42,13 @@ export default class ModelProviderClassGeneratorV4 implements IFCodeGenerator, I
 		this._class.interfaces?.push("/iwbep/cl_v4_abs_model_prov");
 	}
 
-	public generate(): string {
-		let generator = new ABAPGenerator();
-		generator.setABAPClass(this._class);
-		
-		this._class?.publicSection?.methods?.push({
-			type: ABAPMethodType.MEMBER,
-			name: "/iwbep/if_v4_mp_basic~define",
-			isRedefinition: true,
-			code: this._entityDefineMethods.map((method) => `me->${method}( io_model ).`),
-		});
-
-		return generator.generate();
-	}
-
 	public setCompilerInfo(compilerInfo: CompilerInfo): void {
 		this._compilerInfo = compilerInfo;
 	}
 
-	public setClassName(name: string): void { this._class.name = name; }
+	public getFileName(): string { 
+		return `ZCL_${ABAPUtils.getABAPName(this._compilerInfo?.csn)}_MPC`;
+	}
 
 	public addEntity(entity: entity): void {
 		let splitNamespace = entity.name.split(".");
@@ -132,4 +121,20 @@ export default class ModelProviderClassGeneratorV4 implements IFCodeGenerator, I
 		this._entityDefineMethods.push(defineEntityMethod.name);
 		this._class?.protectedSection?.methods?.push(defineEntityMethod);
 	};
+
+	public addStruct(struct: struct): void { }
+
+	public generate(): string {
+		let generator = new ABAPGenerator();
+		generator.setABAPClass(this._class);
+		
+		this._class?.publicSection?.methods?.push({
+			type: ABAPMethodType.MEMBER,
+			name: "/iwbep/if_v4_mp_basic~define",
+			isRedefinition: true,
+			code: this._entityDefineMethods.map((method) => `me->${method}( io_model ).`),
+		});
+
+		return generator.generate();
+	}
 }
