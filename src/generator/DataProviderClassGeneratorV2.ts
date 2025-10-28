@@ -92,7 +92,13 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
 		const services = this._compilerInfo?.csn.services[namespace];
 		let generator = new ABAPGenerator();
-		generator.setABAPClass(this._class);
+
+		// TODO: Generate Types
+		
+		// Generate defines
+		for(const entity of services?.entities ?? []){
+			this.addEntity(entity);
+		}
 
 		this._handleGetEntitySet();
 		this._handleGetEntity();
@@ -100,6 +106,7 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		this._handleCreateEntity();
 		this._handleDeleteEntity();
 
+		generator.setABAPClass(this._class);
 		return generator.generate();
 	}
 
@@ -174,7 +181,7 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 	 * @param {string} entityReturnType Return type of Entity
 	 */
 	protected _getEntity(entityName: string, entityReturnType: string){
-		let methodName = `${entityName}_delete_entity`;
+		let methodName = `${entityName}_get_entity`;
 		this._class?.protectedSection?.methods?.push({
 			type: ABAPMethodType.MEMBER,
 			name: methodName,
@@ -208,7 +215,7 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 	 * Write the method for `entity_get_entityset`
 	 */
 	protected _getEntitySet(entityName: string, entityReturnType: string){
-		let methodName = `${entityName}_delete_entity`;
+		let methodName = `${entityName}_get_entity_set`;
 		this._class?.protectedSection?.methods?.push({
 			type: ABAPMethodType.MEMBER,
 			name: methodName,
@@ -248,7 +255,7 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 	 * @param {string} entityReturnType Return type of Entity
 	 */
 	protected _updateEntity(entityName: string, entityReturnType: string){
-		let methodName = `${entityName}_delete_entity`;
+		let methodName = `${entityName}_update_entity`;
 		this._class?.protectedSection?.methods?.push({
 			type: ABAPMethodType.MEMBER,
 			name: `${entityName}_update_entity`,

@@ -251,7 +251,9 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		// TODO: Generate Types
 		
 		// Generate defines
-		// this._compilerInfo.csn.entities.forEach((entity) => { this.addEntity(entity); });
+		for(const entity of services?.entities ?? []){
+			this.addEntity(entity);
+		}
 
 		this._class?.publicSection?.methods?.push({
 			type: ABAPMethodType.MEMBER,
