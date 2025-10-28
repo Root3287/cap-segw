@@ -4,14 +4,18 @@ import {
 	Class as ABAPClass, 
 	ClassSectionType as ABAPClassSectionType,
 	Method as ABAPMethod, 
-	MethodType as ABAPMethodType, 
-	ParameterReferenceType as ABAPParameterReferenceType
+	MethodType as ABAPMethodType,
+	Primitive as ABAPPrimative,
+	Parameter as ABAPParameter, 
+	ParameterReferenceType as ABAPParameterReferenceType,
+	Structure as ABAPStructure
 } from "../types/abap";
 import { CompilerInfo } from "../types/frontend";
 import { Primitive as CDSPrimitive } from "../types/cds";
 import CodeWriter from "./CodeWriter";
 
 import { ABAP as ABAPUtils } from "../utils/ABAP";
+import { CDS as CDSUtils } from "../utils/CDS";
 
 import cds, { entity, struct } from "@sap/cds";
 
@@ -57,7 +61,6 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 	}
 
 	public addEntity(entity: entity): void {
-		let splitNamespace = entity.name.split(".");
 		let entityName = ABAPUtils.getABAPName(entity);
 
 		if(entityName.length > 128){
@@ -69,6 +72,8 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		if(methodName > 30){
 			LOG.warn(`Method ${methodName} too long. Consider shortening it with @segw.mpc.define.name`);
 		}
+
+		this._createEntityType(entity, entityName);
 		
 		let defineEntityMethod: ABAPMethod = {
 			type: ABAPMethodType.MEMBER,
@@ -234,6 +239,12 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		if((<any>entity)?.["@segw.filter_required"]){
 			writer.writeLine(`entity_set->set_filter_required( ${ABAPUtils.toABAPBool((<any>entity)?.["@segw.filter_required"])} ).`);
 		}
+
+		writer.writeLine(`entity_type->bind_structure( `).increaseIndent(); 
+		writer.writeLine(`iv_structure_name = '${this._class.name}=>T_${entityName}'`);
+		if((<any>entity)?.["@segw.abap.type"])
+			writer.writeLine(`iv_bind_conversion = abap_true`);
+		writer.decreaseIndent().writeLine(`).`);
 		writer.writeLine();
 
 		defineEntityMethod.code = writer.generate().split("\n");
@@ -242,12 +253,64 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 	};
 
 	public addStruct(struct: struct): void { 
+		// Check if this already exists
+		let splitNamespace = entity.name.split(".");
+		let structName = (<any>entity)?.["@segw.name"] ?? splitNamespace[splitNamespace.length-1];
+		let abapStructName = `t_${structName}`;
+		let exists = this._class?.publicSection?.structures?.find((abapStruct) => abapStruct.name === abapStructName);
+		if(exists) return; // Already added, nothing to do here.
+
+		for(let element of struct.elements){
+			switch(element.type){
+				case CDSPrimitive.UUID:
+					break;
+				case CDSPrimitive.Boolean:
+					break;
+				case CDSPrimitive.Integer:
+					break;
+				case CDSPrimitive.Int16:
+					break;
+				case CDSPrimitive.Int32:
+					break;
+				case CDSPrimitive.Int64:
+					break;
+				case CDSPrimitive.UInt8:
+					break;
+				case CDSPrimitive.Decimal:
+					break;
+				case CDSPrimitive.Double:
+					break;
+				case CDSPrimitive.Date:
+					break;
+				case CDSPrimitive.Time:
+					break;
+				case CDSPrimitive.DateTime:
+					break;
+				case CDSPrimitive.Timestamp:
+					break;
+				case CDSPrimitive.String:
+					break;
+				case CDSPrimitive.Binary:
+					break;
+				case CDSPrimitive.LargeBinary:
+					break;
+				case CDSPrimitive.LargeString:
+					break;
+				case CDSPrimitive.Composition:
+				case CDSPrimitive.Association:
+					break;
+				default:
+					break;
+			}
+		}
 	}
 
 	public generate(): string {
 		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
 		const services = this._compilerInfo?.csn.services[namespace];
 		let generator = new ABAPGenerator();
+
+		this._class.name = this.getFileName().split('.')[0];
 
 		// TODO: Generate Types
 		
@@ -284,5 +347,114 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 
 		generator.setABAPClass(this._class);
 		return generator.generate();
+	}
+
+	private _addAssociation() {
+		let writer = new CodeWriter();
+		writer.writeLine(`DATA:`).increaseIndent();
+		writer.writeLine(`annotation type ref to /iwbep/if_mgw_odata_annotation,`);
+		writer.writeLine(`entity_type type ref to /iwbep/if_mgw_odata_entity_typ,`);
+		writer.writeLine(`association type ref to /iwbep/if_mgw_odata_assoc,`);
+		writer.writeLine(`ref_constraint type ref to /iwbep/if_mgw_odata_ref_constr,`);
+		writer.writeLine(`assoc_set type ref to /iwbep/if_mgw_odata_assoc_set,`);
+		writer.writeLine(`nav_property type ref to /iwbep/if_mgw_odata_nav_prop.`)
+		writer.decreaseIndent().writeLine();
+
+		for(let association of ([] as any)){
+			// Create the association
+			writer.writeLine(`association = model->create_association(`).increaseIndent();
+				writer.writeLine(`iv_association_name - |${association.name}|`);
+				writer.writeLine(`iv_left_type = '${association.leftEntity}'`);
+				writer.writeLine(`iv_left_card = '${association.leftCardality}'`);
+				writer.writeLine(`iv_right_type = '${association.rightEntity}'`);
+				writer.writeLine(`iv_right_card = '${association.rightCard}'`);
+				writer.writeLine(`iv_def_assoc_set = abap_false`);
+			writer.decreaseIndent().writeLine(`).`);
+
+			// Create the Contraints
+			writer.writeLine(`ref_constraint = association->create_ref_constraint( ).`);
+			writer.writeLine(`ref_constraint->add_property(`).increaseIndent();
+			writer.writeLine(`iv_principal_property = ''`);
+			writer.writeLine(`iv_dependent_property = ''`);
+			writer.decreaseIndent().writeLine(`).`);
+
+			// Create Association Set
+			writer.writeLine(`assoc_set->create_association_set(`).increaseIndent();
+			writer.writeLine(`iv_association_set_name = ''`);
+			writer.writeLine(`iv_left_entity_set_name = ''`);
+			writer.writeLine(`iv_right_entity_set_name = ''`);
+			writer.writeLine(`iv_association_name = ''`);
+			writer.decreaseIndent().writeLine(').');
+		}
+
+		for(let entity of ([] as any)){
+			writer.writeLine(`entity_type = model->get_entity_type( iv_entity_name = '' ).`);
+			writer.writeLine(`nav_property = entity_type->create_navigation_property(`).increaseIndent();
+			writer.writeLine(`iv_property_name = ''`);
+			writer.writeLine(`iv_abap_fieldname = ''`);
+			writer.writeLine(`iv_association_name = ''`);
+			writer.decreaseIndent().writeLine(`).`);
+		}
+
+		let code = writer.generate().split('\n');
+		this._class?.publicSection?.methods?.push({
+			type: ABAPMethodType.MEMBER,
+			name: "define_associations",
+			isRedefinition: true,
+			code: code
+		});
+	}
+
+	private _createEntityType(entity: entity, entityName: string): void {
+		let typeName = `t_${entityName}`;
+
+		// Check if pre-defined. If so we create a type alias.
+		if((<any>entity)?.["@segw.abap.type"]){
+			this._class?.publicSection?.typeAlias?.push({
+				name: typeName,
+				referenceType: ABAPParameterReferenceType.TYPE,
+				type: (<any>entity)?.["@segw.abap.type"]
+			})
+			return;
+		}
+
+		let abapStructure: ABAPStructure = { name: typeName, parameters: [] };
+
+		// Generate for local
+		for(let property of entity.elements){
+			let propertyType = <string>(CDSUtils.cds2abap((<CDSPrimitive>property.type)));
+			
+			// This is not an primative type, but one of the following
+			// - Association
+			// - Compisition
+			// - Complex Type
+			if(propertyType === null){
+				propertyType = `t_${ABAPUtils.getABAPName({ "@segw.name": property.name})}`;
+
+				// TODO: Handle it
+			}
+
+			let abapProperty: ABAPParameter = {
+				name: property.name,
+				referenceType: ABAPParameterReferenceType.TYPE,
+				type: propertyType,
+			};
+
+			if(propertyType === ABAPPrimative.DECIMAL){
+				abapProperty.length = 16;
+				abapProperty.decimal = 0;
+			}
+			
+			abapStructure.parameters.push(abapProperty);
+		}
+
+		this._class?.publicSection?.structures?.push(abapStructure);
+		this._class?.publicSection?.tables?.push({
+			structure: { 
+				name: `t${typeName}`, 
+				referenceType: ABAPParameterReferenceType.TYPE_STANDARD_TABLE, 
+				type: typeName 
+			}
+		});
 	}
 }
