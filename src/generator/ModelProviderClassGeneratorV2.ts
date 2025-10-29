@@ -73,7 +73,7 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 			LOG.warn(`Method ${methodName} too long. Consider shortening it with @segw.mpc.define.name`);
 		}
 
-		this._createEntityType(entity, entityName);
+		this._createType(entity, entityName);
 		
 		let defineEntityMethod: ABAPMethod = {
 			type: ABAPMethodType.MEMBER,
@@ -352,8 +352,28 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		});
 	}
 
-	private _createEntityType(entity: entity, entityName: string): void {
-		let typeName = `t_${entityName}`;
+	private _createType(entity: any, name: string): void {
+		let typeName = `t_${name}`;
+
+		let checkIfTypeExists = (type: string) => {
+			let existsInStructures = this._class?.publicSection?.structures?.find(s => s.name === type);
+			let existsInTypeAlias = this._class?.publicSection?.typeAlias?.find(s => s.name === type);
+			return existsInStructures || existsInTypeAlias;
+		}
+
+		let handleTypeAlias = (propertyType: string, propertyPrototypePrimative: string) => {
+			if(checkIfTypeExists(propertyType)) return;
+
+			this._class?.publicSection?.typeAlias?.push({
+				name: propertyType,
+				referenceType: ABAPParameterReferenceType.TYPE,
+				type: propertyPrototypePrimative
+			});
+		};
+
+		if(checkIfTypeExists(typeName)){
+			return;
+		}
 
 		// Check if pre-defined. If so we create a type alias.
 		if((<any>entity)?.["@segw.abap.type"]){
@@ -369,16 +389,50 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 
 		// Generate for local
 		for(let property of entity.elements){
+			// This is not an primative type, but one of the following
 			let propertyType = <string>(CDSUtils.cds2abap((<CDSPrimitive>property.type)));
 			
-			// This is not an primative type, but one of the following
-			// - Association
-			// - Compisition
-			// - Complex Type
-			if(propertyType === null){
-				propertyType = `t_${ABAPUtils.getABAPName({ "@segw.name": property.name})}`;
+			if(property?.["@segw.abap.type"]){
+				propertyType = property?.["@segw.abap.type"];
+			}
 
-				// TODO: Handle it
+			// - Association
+			// - Composition
+			// - Complex Type
+			// - Type Alias
+			if(propertyType === null){
+
+				let propertyPrototype = Object.getPrototypeOf(property);
+				let propertyPrototypePrimative = CDSUtils.cds2abap(propertyPrototype.type);
+
+				let isAssociation = (
+					property?.type === CDSPrimitive.Association || 
+					propertyPrototype?.type === CDSPrimitive.Association
+				);
+				let isComposition = (
+					property?.type === CDSPrimitive.Composition || 
+					propertyPrototype?.type === CDSPrimitive.Composition
+				);
+				if(
+					!propertyType && 
+					property.kind === "element" && 
+					(isAssociation || isComposition)
+				){
+					continue;
+				}
+
+				// Check if type is actually in Prototype
+				// If it is it's a type alias
+				if(!propertyType && property.kind === "element" && propertyPrototypePrimative){
+					propertyType = `t_${ABAPUtils.getABAPName(property.type)}`;
+					handleTypeAlias(propertyType, propertyPrototypePrimative);
+				}
+
+				// Check if Complex Type
+				if(!propertyType && property.kind === "element" && propertyPrototype?.kind === "type"){
+					propertyType = `t_${ABAPUtils.getABAPName(property.type)}`;
+					this._createType(property, property.type);
+				}
 			}
 
 			let abapProperty: ABAPParameter = {
@@ -404,4 +458,6 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 			}
 		});
 	}
+
+
 }

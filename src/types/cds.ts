@@ -19,5 +19,5 @@ export enum Primitive {
 	Map = 'cds.Map',
 	Vector = 'cds.Vector',
 	Composition = 'cds.Composition',
-	Association = 'cds.Association',
+	Association = 'cds.Association'
 };
