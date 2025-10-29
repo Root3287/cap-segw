@@ -79,6 +79,13 @@ cd /path/to/your-cap-project
 npm link cap-segw
 ```
 
+### In-Repository Tests
+
+```
+export PATH=$(pwd)/node_modules/.bin
+mkdir node_modules/@root3287 && ln -s . node_modules/@root3287/cap-segw
+```
+
 ## License
 
 This project is licensed under the Apache 2.0 License.

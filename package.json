@@ -25,13 +25,12 @@
     "cds-plugin.js"
   ],
   "scripts": {
-    "build": "npm run build",
-    "test": "npm run test"
-  },
-  "dependencies": {
+    "build": "tsc",
+    "test": "jest"
   },
   "devDependencies": {
     "@cap-js/cds-types": "^0.15.0",
+    "@sap/cds-dk": "^9.4.2",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.9.1",
     "jest": "^30.2.0",
