@@ -23,8 +23,7 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		interfaces: [],
 		publicSection: {
 			type: ABAPClassSectionType.PUBLIC,
-			structures: [],
-			tables: [],
+			types: [],
 			methods: [],
 		},
 		protectedSection: {

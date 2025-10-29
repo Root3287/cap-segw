@@ -27,9 +27,7 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		inheriting: ["/iwbep/cl_mgw_push_abs_model"],
 		publicSection: {
 			type: ABAPClassSectionType.PUBLIC,
-			structures: [],
-			typeAlias: [],
-			tables: [],
+			types: [],
 			methods: [],
 		},
 		protectedSection: {
@@ -290,7 +288,7 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 				"\trv_last_modified = lc_gen_date_time.",
 				"ENDIF."
 			]
-		})
+		});
 
 		generator.setABAPClass(this._class);
 		return generator.generate();
@@ -356,15 +354,15 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		let typeName = `t_${name}`;
 
 		let checkIfTypeExists = (type: string) => {
-			let existsInStructures = this._class?.publicSection?.structures?.find(s => s.name === type);
-			let existsInTypeAlias = this._class?.publicSection?.typeAlias?.find(s => s.name === type);
+			let existsInStructures = this._class?.publicSection?.types?.find(s => "name" in s && s?.name === type);
+			let existsInTypeAlias = this._class?.publicSection?.types?.find(s => "name" in s && s?.name === type);
 			return existsInStructures || existsInTypeAlias;
 		}
 
 		let handleTypeAlias = (propertyType: string, propertyPrototypePrimative: string) => {
 			if(checkIfTypeExists(propertyType)) return;
 
-			this._class?.publicSection?.typeAlias?.push({
+			this._class?.publicSection?.types?.push({
 				name: propertyType,
 				referenceType: ABAPParameterReferenceType.TYPE,
 				type: propertyPrototypePrimative
@@ -377,7 +375,7 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 
 		// Check if pre-defined. If so we create a type alias.
 		if((<any>entity)?.["@segw.abap.type"]){
-			this._class?.publicSection?.typeAlias?.push({
+			this._class?.publicSection?.types?.push({
 				name: typeName,
 				referenceType: ABAPParameterReferenceType.TYPE,
 				type: (<any>entity)?.["@segw.abap.type"]
@@ -449,8 +447,8 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 			abapStructure.parameters.push(abapProperty);
 		}
 
-		this._class?.publicSection?.structures?.push(abapStructure);
-		this._class?.publicSection?.tables?.push({
+		this._class?.publicSection?.types?.push(abapStructure);
+		this._class?.publicSection?.types?.push({
 			structure: { 
 				name: `t${typeName}`, 
 				referenceType: ABAPParameterReferenceType.TYPE_STANDARD_TABLE, 

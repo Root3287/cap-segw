@@ -30,7 +30,7 @@ export default class ABAPGenerator implements IFCodeGenerator {
 		this._writer.increaseIndent();
 		this._writer.writeLine("PUBLIC")
 		this._class?.inheriting?.forEach?.((inhertingClass) => {
-			this._writer.writeLine(`INHERTING FROM ${inhertingClass}`);
+			this._writer.writeLine(`INHERITING FROM ${inhertingClass}`);
 		});
 		if(this._class?.isAbstract) this._writer.writeLine("ABSTRACT");
 		if(this._class?.isFinal) this._writer.writeLine("FINAL");
@@ -55,22 +55,18 @@ export default class ABAPGenerator implements IFCodeGenerator {
 		}
 
 		// Write Types
-		section?.structures?.forEach((structure) => {
-			this._writeStructure(structure);
-			this._writer.writeLine();
-		});
-
-		// Write Type Alias
-		section?.typeAlias?.forEach((alias) => {
-			this._writeTypeAlias(alias);
-			this._writer.writeLine();
-		})
-
-		// Table Types
-		section?.tables?.forEach((table) => {
-			this._writeTableType(table);
-			this._writer.writeLine();
-		});
+		for(let type of section?.types ?? []){
+			if("parameters" in type){
+				this._writeStructure(type);
+			}
+			if("structure" in type){
+				this._writeTableType(type);
+			}
+			if("referenceType" in type){
+				this._writeTypeAlias(type);
+			}
+			this._writer.writeLine()
+		}
 
 		// Parameters
 		section?.parameters?.forEach((parameter) => {
