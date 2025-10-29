@@ -11,19 +11,16 @@ type Address {
 	country: Country;
 }
 
-entity Property : cuid, managed {
+entity Location : cuid, managed {
 	address: Address;
-	rooms: Composition of many Room;
+	@segw.association.name: 'LocationRoom'
+	rooms: Composition of many Room on rooms.location = $self;
 }
 
 entity Room: cuid, managed {
-	property: Association to one Property;
+	@segw.association.ignore: true
+	location: Association to Location;
 	roomNumber: String(5);
-}
-
-entity CustomerRooms: cuid, managed, temporal {
-	customer: Composition of one Customer;
-	room: Composition of one Room;
 }
 
 entity Customer: cuid, managed {

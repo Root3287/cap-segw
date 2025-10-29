@@ -1,8 +1,8 @@
-using { Property, Customer } from '../db/Hotel.cds';
+using { Location, Customer } from '../db/Hotel.cds';
 
 @segw.name: 'ZHOTEL'
 service Hotel {
-	entity Properties as projection on Property;
+	entity Locations as projection on Location;
 
 	entity Customers as projection on Customer;
 }
