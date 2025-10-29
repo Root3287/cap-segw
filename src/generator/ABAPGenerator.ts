@@ -108,7 +108,10 @@ export default class ABAPGenerator implements IFCodeGenerator {
 	 * @param {Parameter} alias Type Alias to write
 	 */
 	private _writeTypeAlias(alias: ABAP.Parameter){
-		this._writer.writeLine(`TYPES: ${alias.name} ${alias.referenceType} ${alias.type}.`);
+		this._writer
+			.increaseIndent()
+			.writeLine(`TYPES: ${alias.name} ${alias.referenceType} ${alias.type}.`)
+			.decreaseIndent();
 	}
 
 	/**
