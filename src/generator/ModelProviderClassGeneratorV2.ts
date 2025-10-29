@@ -162,7 +162,6 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 					break;
 				case CDSPrimitive.Composition:
 				case CDSPrimitive.Association:
-					break;
 				default:
 					let propertyPrototype = Object.getPrototypeOf(property);
 					if(propertyPrototype.kind === "type"){
@@ -271,8 +270,8 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 			code: [
 				`model->set_schema_namespace( |${namespace}| ).`,
 				"",
-				...this._entityDefineMethods.map((method) => `me->${method}( io_model ).`),
-				"me->define_associations( ).",
+				...this._entityDefineMethods.map((method) => `me->${method}( ).`),
+				"\" me->define_associations( ).",
 			],
 		});
 
