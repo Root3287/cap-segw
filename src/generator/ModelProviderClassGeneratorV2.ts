@@ -81,19 +81,19 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 
 		let writer = new CodeWriter();
 		writer.writeLine("DATA:").increaseIndent();
-		writer.writeLine("annotation TYPE /iwbep/if_mgw_odata_annotation,");
+		writer.writeLine("annotation TYPE REF TO /iwbep/if_mgw_odata_annotation,");
 		writer.writeLine("entity_type TYPE REF TO /iwbep/if_mgw_odata_entity_typ,");
 		writer.writeLine("complex_type TYPE REF TO /iwbep/if_mgw_odata_cmplx_type,");
 		writer.writeLine("property TYPE REF TO /iwbep/if_mgw_odata_property,");
-		writer.writeLine("entity_set TYPE REF TO /iwbep/if/mgw_odata_entity_set.");
+		writer.writeLine("entity_set TYPE REF TO /iwbep/if_mgw_odata_entity_set.");
 		// TODO: Create Types
 		// writer.writeLine(`referenced_entity TYPE ${this._class.name}~${this._class.publicSection.types[entity.name]}`);
 		writer.decreaseIndent().writeLine().writeLine();
 
 		writer.writeLine(`" Create Entity Type`);
-		writer.writeLine("entity_type = io_model->create_entity_type( ").increaseIndent();
+		writer.writeLine("entity_type = me->model->create_entity_type( ").increaseIndent();
 		writer.writeLine(`iv_entity_type_name = |${entityName}|`);
-		writer.writeLine(`is_def_entity_set = abap_false`);
+		writer.writeLine(`iv_def_entity_set = abap_false`);
 		writer.decreaseIndent().writeLine(").").writeLine();
 
 		for(let property of entity.elements){
@@ -281,7 +281,7 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 			isRedefinition: true,
 			code: [
 				// TODO: UPDATE DATE TIME
-				"CONSTANTS: lc_gen_date_time TYPE VALUE '20250919151019'.",
+				"CONSTANTS: lc_gen_date_time TYPE timestamp VALUE '20250919151019'.",
 				"rv_last_modified = super->get_last_modified( ).",
 				"IF rv_last_modified LT lc_gen_date_time.",
 				"\trv_last_modified = lc_gen_date_time.",
