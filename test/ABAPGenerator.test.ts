@@ -118,7 +118,7 @@ describe("ABAPGenerator", () => {
 			name: "ZTEST",
 			publicSection: {
 				type: ABAPClassSectionType.PUBLIC,
-				structures: [
+				types: [
 					{
 						name: "TY_STRUC",
 						parameters: [
@@ -145,16 +145,14 @@ describe("ABAPGenerator", () => {
 			name: "ZTEST",
 			publicSection: {
 				type: ABAPClassSectionType.PUBLIC,
-				structures: [
+				types: [
 					{
 						name: "TY_STRUC",
 						parameters: [
 							{ name: "ID", 	referenceType: ABAPParameterReferenceType.TYPE, type: "GUID" },
 							{ name: "name", referenceType: ABAPParameterReferenceType.TYPE, type: "string" },
 						]
-					}
-				],
-				tables: [
+					},
 					{
 						structure: {
 							name: "TT_STRUC",
