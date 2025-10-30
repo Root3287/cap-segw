@@ -15,6 +15,8 @@ import { CompilerInfo } from "../types/frontend";
 import { Primitive as CDSPrimitive } from "../types/cds";
 import CodeWriter from "./CodeWriter";
 
+import CDSTypeConverter from "../converters/CDSTypeConverter";
+
 import { ABAP as ABAPUtils } from "../utils/ABAP";
 import { CDS as CDSUtils } from "../utils/CDS";
 import { getCardinalityPair } from "../utils/Cardinality";
@@ -77,7 +79,6 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 			LOG.warn(`Method ${methodName} too long. Consider shortening it with @segw.mpc.define.name`);
 		}
 
-		this._createType(entity, entityName);
 		
 		let defineEntityMethod: ABAPMethod = {
 			type: ABAPMethodType.MEMBER,
@@ -263,6 +264,11 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		let generator = new ABAPGenerator();
 
 		this._class.name = this.getFileName().split('.')[0];
+
+		let typeConverter = new CDSTypeConverter();
+		typeConverter.setService(service);
+		if(this._class?.publicSection?.types)
+			this._class.publicSection.types = typeConverter.getABAPTypes();
 		
 		// Generate defines
 		for(const entity of service?.entities ?? []){
@@ -300,114 +306,6 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 
 		generator.setABAPClass(this._class);
 		return generator.generate();
-	}
-
-	private _createType(entity: any, name: string): void {
-		let typeName = `t_${name}`;
-
-		let checkIfTypeExists = (type: string) => {
-			let existsInStructures = this._class?.publicSection?.types?.find(s => "name" in s && s?.name === type);
-			let existsInTypeAlias = this._class?.publicSection?.types?.find(s => "name" in s && s?.name === type);
-			return existsInStructures || existsInTypeAlias;
-		}
-
-		let handleTypeAlias = (propertyType: string, propertyPrototypePrimative: string) => {
-			if(checkIfTypeExists(propertyType)) return;
-
-			this._class?.publicSection?.types?.push({
-				name: propertyType,
-				referenceType: ABAPParameterReferenceType.TYPE,
-				type: propertyPrototypePrimative
-			});
-		};
-
-		if(checkIfTypeExists(typeName)){
-			return;
-		}
-
-		// Check if pre-defined. If so we create a type alias.
-		if((<any>entity)?.["@segw.abap.type"]){
-			this._class?.publicSection?.types?.push({
-				name: typeName,
-				referenceType: ABAPParameterReferenceType.TYPE,
-				type: (<any>entity)?.["@segw.abap.type"]
-			})
-			return;
-		}
-
-		let abapStructure: ABAPStructure = { name: typeName, parameters: [] };
-
-		// Generate for local
-		for(let property of entity.elements){
-			// This is not an primative type, but one of the following
-			// TODO:  Process (<any>property)?.["@odata.type"] ?? 
-			let propertyType = <string>(CDSUtils.cds2abap((<CDSPrimitive>property.type)));
-			
-			if(property?.["@segw.abap.type"]){
-				propertyType = property?.["@segw.abap.type"];
-			}
-
-			// - Association
-			// - Composition
-			// - Complex Type
-			// - Type Alias
-			if(propertyType === null){
-
-				let propertyPrototype = Object.getPrototypeOf(property);
-				let propertyPrototypePrimative = CDSUtils.cds2abap(propertyPrototype.type);
-
-				let isAssociation = (
-					property?.type === CDSPrimitive.Association || 
-					propertyPrototype?.type === CDSPrimitive.Association
-				);
-				let isComposition = (
-					property?.type === CDSPrimitive.Composition || 
-					propertyPrototype?.type === CDSPrimitive.Composition
-				);
-				if(
-					!propertyType && 
-					property.kind === "element" && 
-					(isAssociation || isComposition)
-				){
-					continue;
-				}
-
-				// Check if type is actually in Prototype
-				// If it is it's a type alias
-				if(!propertyType && property.kind === "element" && propertyPrototypePrimative){
-					propertyType = `t_${ABAPUtils.getABAPName(property.type)}`;
-					handleTypeAlias(propertyType, propertyPrototypePrimative);
-				}
-
-				// Check if Complex Type
-				if(!propertyType && property.kind === "element" && propertyPrototype?.kind === "type"){
-					propertyType = `t_${ABAPUtils.getABAPName(property.type)}`;
-					this._createType(property, property.type);
-				}
-			}
-
-			let abapProperty: ABAPParameter = {
-				name: property.name,
-				referenceType: ABAPParameterReferenceType.TYPE,
-				type: propertyType,
-			};
-
-			if(propertyType === ABAPPrimative.DECIMAL){
-				abapProperty.length = 16;
-				abapProperty.decimal = 0;
-			}
-			
-			abapStructure.parameters.push(abapProperty);
-		}
-
-		this._class?.publicSection?.types?.push(abapStructure);
-		this._class?.publicSection?.types?.push({
-			structure: { 
-				name: `t${typeName}`, 
-				referenceType: ABAPParameterReferenceType.TYPE_STANDARD_TABLE, 
-				type: typeName 
-			}
-		});
 	}
 
 	private _getAssociations(service: any) {

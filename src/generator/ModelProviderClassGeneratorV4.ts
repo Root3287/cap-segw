@@ -10,6 +10,8 @@ import {
 import { CompilerInfo } from "../types/frontend";
 import CodeWriter from "./CodeWriter";
 
+import CDSTypeConverter from "../converters/CDSTypeConverter";
+
 import { ABAP as ABAPUtils } from "../utils/ABAP";
 
 import cds, { entity, struct } from "@sap/cds";
@@ -132,6 +134,10 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 
 		this._class.name = this.getFileName().split('.')[0];
 
+		let typeConverter = new CDSTypeConverter();
+		typeConverter.setService(service);
+		if(this._class?.publicSection?.types)
+			this._class.publicSection.types = typeConverter.getABAPTypes();
 		
 		// Generate defines
 		for(const entity of service?.entities ?? []){
