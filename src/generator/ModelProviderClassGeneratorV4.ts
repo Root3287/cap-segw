@@ -22,6 +22,7 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 		interfaces: [],
 		publicSection: {
 			type: ABAPClassSectionType.PUBLIC,
+			types: [],
 			methods: [],
 		},
 		protectedSection: {
@@ -53,8 +54,11 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 	}
 
 	public addEntity(entity: entity): void {
-		let splitNamespace = entity.name.split(".");
-		let entityName = (<any>entity)?.["@segw.name"] ?? splitNamespace[splitNamespace.length-1];
+		if((<any>entity)?.["@segw.ignore"]){
+			return;
+		}
+
+		let entityName = ABAPUtils.getABAPName(entity);
 
 		if(entityName.length > 128){
 			LOG.warn(`${entityName} too long. Consider shortening it with @segw.name`);
@@ -65,25 +69,22 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 		if(methodName > 30){
 			LOG.warn(`Method ${methodName} too long. Consider shortening it with @segw.mpc.define.name`);
 		}
-
+		
 		let defineEntityMethod: ABAPMethod = {
 			type: ABAPMethodType.MEMBER,
 			name: methodName,
 			importing: [
-				{
-					name: "io_model",
-					referenceType: ABAPParameterReferenceType.TYPE_REF,
-					type: "/iwbep/if_v4_med_model"
-				}
-			]
+				{name: "model", referenceType: ABAPParameterReferenceType.TYPE_REF, type: "/iwbep/if_v4_med_model"}
+			],
+			raising: [ "/iwbep/cx_gateway"]
 		};
 
 		let writer = new CodeWriter();
 		writer.writeLine("DATA:").increaseIndent();
-		writer.writeLine("primative_properties TYPE /iwbep/if_v4_med_element=>ty_t_med_prim_property,");
+		writer.writeLine("entity_type TYPE REF TO /iwbep/if_v4_med_entity_type,");
+		writer.writeLine("property TYPE REF TO /iwbep/if_v4_med_prim_prop,");
 		writer.writeLine("entity_set TYPE REF TO /iwbep/if_v4_med_entity_set,");
 		writer.writeLine("nav_property TYPE REF TO /iwbep/if_v4_med_nav_prop,");
-		writer.writeLine("entity_type TYPE REF TO /iwbep/if_v4_med_entity_type.");
 		// TODO: Create Types
 		// writer.writeLine(`referenced_entity TYPE ${this._class.name}~${this._class.publicSection.types[entity.name]}`);
 		writer.decreaseIndent().writeLine().writeLine();
@@ -125,16 +126,31 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 	};
 
 	public generate(): string {
+		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
+		const service = this._compilerInfo?.csn.services[namespace];
 		let generator = new ABAPGenerator();
-		generator.setABAPClass(this._class);
+
+		this._class.name = this.getFileName().split('.')[0];
+
 		
+		// Generate defines
+		for(const entity of service?.entities ?? []){
+			this.addEntity(entity);
+		}
+
+		// let associations = this._getAssociations(service);
+		// this._writeAssociations(associations);
+
 		this._class?.publicSection?.methods?.push({
 			type: ABAPMethodType.MEMBER,
 			name: "/iwbep/if_v4_mp_basic~define",
 			isRedefinition: true,
-			code: this._entityDefineMethods.map((method) => `me->${method}( io_model ).`),
+			code: [
+				...this._entityDefineMethods.map((method) => `me->${method}( io_model ).`)
+			],
 		});
 
+		generator.setABAPClass(this._class);
 		return generator.generate();
 	}
 }
