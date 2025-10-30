@@ -59,6 +59,10 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 	}
 
 	public addEntity(entity: entity): void {
+		if((<any>entity)?.["@segw.ignore"]){
+			return;
+		}
+
 		let entityName = ABAPUtils.getABAPName(entity);
 
 		if(entityName.length > 128){
