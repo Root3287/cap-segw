@@ -1,3 +1,9 @@
+export enum Cardinality {
+	cardinality_0_1 = '0',
+	cardinality_1_1 = '1',
+	cardinality_0_n = 'M',
+	cardinality_1_n = 'N'
+};
 export enum Primitive {
 	UUID = "sysuuid_x",
 	BOOLEAN = "abap_bool",

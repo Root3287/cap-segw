@@ -1,6 +1,7 @@
 import IFServiceClassGenerator from "./IFServiceClassGenerator";
 import ABAPGenerator from "./ABAPGenerator"; 
-import { 
+import {
+	Cardinality,
 	Class as ABAPClass, 
 	ClassSectionType as ABAPClassSectionType,
 	Method as ABAPMethod, 
@@ -16,8 +17,9 @@ import CodeWriter from "./CodeWriter";
 
 import { ABAP as ABAPUtils } from "../utils/ABAP";
 import { CDS as CDSUtils } from "../utils/CDS";
+import { getCardinalityPair } from "../utils/Cardinality";
 
-import cds, { entity, struct } from "@sap/cds";
+import cds, { csn, entity, struct } from "@sap/cds";
 
 const LOG = cds.log("segw");
 
@@ -257,17 +259,18 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 
 	public generate(): string {
 		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
-		const services = this._compilerInfo?.csn.services[namespace];
+		const service = this._compilerInfo?.csn.services[namespace];
 		let generator = new ABAPGenerator();
 
 		this._class.name = this.getFileName().split('.')[0];
-
-		// TODO: Generate Types
 		
 		// Generate defines
-		for(const entity of services?.entities ?? []){
+		for(const entity of service?.entities ?? []){
 			this.addEntity(entity);
 		}
+
+		let associations = this._getAssociations(service);
+		this._writeAssociations(associations);
 
 		this._class?.publicSection?.methods?.push({
 			type: ABAPMethodType.MEMBER,
@@ -277,7 +280,7 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 				`model->set_schema_namespace( |${namespace}| ).`,
 				"",
 				...this._entityDefineMethods.map((method) => `me->${method}( ).`),
-				"\" me->define_associations( ).",
+				"me->define_associations( ).",
 			],
 		});
 
@@ -297,62 +300,6 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 
 		generator.setABAPClass(this._class);
 		return generator.generate();
-	}
-
-	private _addAssociation() {
-		let writer = new CodeWriter();
-		writer.writeLine(`DATA:`).increaseIndent();
-		writer.writeLine(`annotation type ref to /iwbep/if_mgw_odata_annotation,`);
-		writer.writeLine(`entity_type type ref to /iwbep/if_mgw_odata_entity_typ,`);
-		writer.writeLine(`association type ref to /iwbep/if_mgw_odata_assoc,`);
-		writer.writeLine(`ref_constraint type ref to /iwbep/if_mgw_odata_ref_constr,`);
-		writer.writeLine(`assoc_set type ref to /iwbep/if_mgw_odata_assoc_set,`);
-		writer.writeLine(`nav_property type ref to /iwbep/if_mgw_odata_nav_prop.`)
-		writer.decreaseIndent().writeLine();
-
-		for(let association of ([] as any)){
-			// Create the association
-			writer.writeLine(`association = model->create_association(`).increaseIndent();
-				writer.writeLine(`iv_association_name - |${association.name}|`);
-				writer.writeLine(`iv_left_type = '${association.leftEntity}'`);
-				writer.writeLine(`iv_left_card = '${association.leftCardality}'`);
-				writer.writeLine(`iv_right_type = '${association.rightEntity}'`);
-				writer.writeLine(`iv_right_card = '${association.rightCard}'`);
-				writer.writeLine(`iv_def_assoc_set = abap_false`);
-			writer.decreaseIndent().writeLine(`).`);
-
-			// Create the Contraints
-			writer.writeLine(`ref_constraint = association->create_ref_constraint( ).`);
-			writer.writeLine(`ref_constraint->add_property(`).increaseIndent();
-			writer.writeLine(`iv_principal_property = ''`);
-			writer.writeLine(`iv_dependent_property = ''`);
-			writer.decreaseIndent().writeLine(`).`);
-
-			// Create Association Set
-			writer.writeLine(`assoc_set->create_association_set(`).increaseIndent();
-			writer.writeLine(`iv_association_set_name = ''`);
-			writer.writeLine(`iv_left_entity_set_name = ''`);
-			writer.writeLine(`iv_right_entity_set_name = ''`);
-			writer.writeLine(`iv_association_name = ''`);
-			writer.decreaseIndent().writeLine(').');
-		}
-
-		for(let entity of ([] as any)){
-			writer.writeLine(`entity_type = model->get_entity_type( iv_entity_name = '' ).`);
-			writer.writeLine(`nav_property = entity_type->create_navigation_property(`).increaseIndent();
-			writer.writeLine(`iv_property_name = ''`);
-			writer.writeLine(`iv_abap_fieldname = ''`);
-			writer.writeLine(`iv_association_name = ''`);
-			writer.decreaseIndent().writeLine(`).`);
-		}
-
-		let code = writer.generate().split('\n');
-		this._class?.publicSection?.methods?.push({
-			type: ABAPMethodType.MEMBER,
-			name: "define_associations",
-			isRedefinition: true,
-			code: code
-		});
 	}
 
 	private _createType(entity: any, name: string): void {
@@ -393,6 +340,7 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		// Generate for local
 		for(let property of entity.elements){
 			// This is not an primative type, but one of the following
+			// TODO:  Process (<any>property)?.["@odata.type"] ?? 
 			let propertyType = <string>(CDSUtils.cds2abap((<CDSPrimitive>property.type)));
 			
 			if(property?.["@segw.abap.type"]){
@@ -462,5 +410,109 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		});
 	}
 
+	private _getAssociations(service: any) {
+		let isAssociation = (e: any) => e.type === CDSPrimitive.Composition || e.type === CDSPrimitive.Association;
+		let associations: any = [];
+		for(const entity of service?.entities ?? []){
+			associations.push(
+				...Object.values(entity.elements)?.filter(
+					(element: any) => isAssociation(element) 
+				) 
+			);
+		}
+		return associations;
+	}
 
+	private _writeAssociations(associations: any[]): void {
+		let writer = new CodeWriter();
+		writer.writeLine(`DATA:`).increaseIndent();
+		writer.writeLine(`annotation type ref to /iwbep/if_mgw_odata_annotation,`);
+		writer.writeLine(`entity_type type ref to /iwbep/if_mgw_odata_entity_typ,`);
+		writer.writeLine(`association type ref to /iwbep/if_mgw_odata_assoc,`);
+		writer.writeLine(`ref_constraint type ref to /iwbep/if_mgw_odata_ref_constr,`);
+		writer.writeLine(`assoc_set type ref to /iwbep/if_mgw_odata_assoc_set,`);
+		writer.writeLine(`nav_property type ref to /iwbep/if_mgw_odata_nav_prop.`)
+		writer.decreaseIndent().writeLine();
+
+		let visitedNodes: any[] = [];
+		for(let association of associations){
+			let associationName = association?.["@segw.association.name"] ?? `${ABAPUtils.getABAPName(association.parent)}_${ABAPUtils.getABAPName(association._target)}`;
+			let parentName = ABAPUtils.getABAPName(association.parent);
+			let targetName = ABAPUtils.getABAPName(association._target);
+
+			if((<any>association)?.["@segw.association.ignore"]) continue;
+
+			// We already process the association
+			if(visitedNodes.find((nodes) => nodes.parent === association.parent && nodes.target === association._target ))
+				continue;
+
+			let inverseAssociation = associations.find(
+				(node) => node._target === association.parent && node.parent === association._target
+			);
+
+			let [leftCard, rightCard] = <any>(getCardinalityPair(association, inverseAssociation));
+
+			// Create the association
+			writer.writeLine(`association = model->create_association(`).increaseIndent();
+				writer.writeLine(`iv_association_name = |${associationName}|`);
+				writer.writeLine(`iv_left_type = '${parentName}'`);
+				writer.writeLine(`iv_right_type = '${targetName}'`);
+				writer.writeLine(`iv_left_card = '${leftCard}'`);
+				writer.writeLine(`iv_right_card = '${rightCard}'`);
+				writer.writeLine(`iv_def_assoc_set = abap_false`);
+			writer.decreaseIndent().writeLine(`).`);
+
+			// Create the Contraints
+			// TODO: Handle many constraints
+			writer.writeLine(`ref_constraint = association->create_ref_constraint( ).`);
+			writer.writeLine(`ref_constraint->add_property(`).increaseIndent();
+			writer.writeLine(`iv_principal_property = '${association.on[0].ref[0]}'`);
+			writer.writeLine(`iv_dependent_property = '${association.on[0].ref[1]}'`);
+			writer.decreaseIndent().writeLine(`).`);
+
+			// Create Association Set
+			let getEntitySetName = (entity: entity): string => (<any>entity)?.["@segw.set.name"] ?? `${ABAPUtils.getABAPName(entity)}Set`;
+			let associationSetName = (<any>association)?.["@segw.set.name"] ?? `${associationName}_set`;
+			writer.writeLine(`assoc_set->create_association_set(`).increaseIndent();
+			writer.writeLine(`iv_association_set_name = '${associationSetName}'`);
+			writer.writeLine(`iv_left_entity_set_name = '${getEntitySetName(association.parent)}'`);
+			writer.writeLine(`iv_right_entity_set_name = '${getEntitySetName(association._target)}'`);
+			writer.writeLine(`iv_association_name = '${associationName}'`);
+			writer.decreaseIndent().writeLine(').');
+
+			writer.writeLine();
+
+			// Since we worked both ways, we can marked this as 'complete'.
+			visitedNodes.push({ 
+				assocationName: associationName, 
+				parent: association.parent, 
+				target: association._target 
+			});
+			visitedNodes.push({ 
+				assocationName: associationName,
+				parent: association._target, 
+				target: association.parent 
+			});
+		}
+
+		for(let association of associations){
+			let propertyName = association?.["@segw.name"] ?? association.name;
+			let abapName = association?.["@segw.abap.name"] ?? association.name;
+			let associationName = visitedNodes.find(node => node.parent === association.parent)?.assocationName;
+			writer.writeLine(`entity_type = model->get_entity_type( iv_entity_name = '${ABAPUtils.getABAPName(association.parent)}' ).`);
+			writer.writeLine(`nav_property = entity_type->create_navigation_property(`).increaseIndent();
+			writer.writeLine(`iv_property_name = '${propertyName}'`);
+			writer.writeLine(`iv_abap_fieldname = '${abapName}'`);
+			writer.writeLine(`iv_association_name = '${associationName}'`);
+			writer.decreaseIndent().writeLine(`).`).writeLine();
+		}
+
+		let code = writer.generate().split('\n');
+		this._class?.publicSection?.methods?.push({
+			type: ABAPMethodType.MEMBER,
+			name: "define_associations",
+			isRedefinition: true,
+			code: code
+		});
+	}
 }

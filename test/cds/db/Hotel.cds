@@ -8,6 +8,8 @@ type Address {
 	@segw.abap.type: 'regio'
 	region: String;
 	postal: String;
+
+	@segw.association.ignore
 	country: Country;
 }
 
