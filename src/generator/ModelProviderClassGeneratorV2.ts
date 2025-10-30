@@ -213,7 +213,9 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		}
 		
 		writer.writeLine();
-		writer.writeLine("entity_set = entity_type->create_entity_set( '' ).").writeLine();
+
+		let entitySetName = (<any>entity)?.["@segw.set.name"] ?? `${entityName}Set`;
+		writer.writeLine(`entity_set = entity_type->create_entity_set( '${entitySetName}' ).`).writeLine();
 		
 		let readOnlyAbap = ABAPUtils.toABAPBool(!(<any>entity)?.["@readonly"]);
 		writer.writeLine(`entity_set->set_creatable( ${readOnlyAbap} ).`);
