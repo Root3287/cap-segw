@@ -36,6 +36,7 @@ Since there are some annotations that are not present in CDS but can be set on S
 | `@segw.set.name`           | Set the name of Entity/Association Set   |   `string`   |
 | `@segw.association.name`   | Set the name of the association          |   `string`   |
 | `@segw.association.ignore` | Ignore the parent side of an association |   `boolean`  |
+| `@segw.action.method`		 | Set the HTTP method for Action (ODATAV2) |   `string`   | 
 
 
 ## Installation

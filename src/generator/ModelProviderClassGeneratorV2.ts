@@ -218,6 +218,8 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		let associations = this._getAssociations(service);
 		this._writeAssociations(associations);
 
+		this._processActions(service);
+
 		this._class?.publicSection?.methods?.push({
 			type: ABAPMethodType.MEMBER,
 			name: "define",
@@ -227,6 +229,7 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 				"",
 				...this._entityDefineMethods.map((method) => `me->${method}( ).`),
 				"me->define_associations( ).",
+				"me->define_actions( )."
 			],
 		});
 
@@ -423,10 +426,94 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		}
 
 		let code = writer.generate().split('\n');
-		this._class?.publicSection?.methods?.push({
+		this._class?.protectedSection?.methods?.push({
 			type: ABAPMethodType.MEMBER,
 			name: "define_associations",
 			isRedefinition: true,
+			code: code
+		});
+	}
+
+	private _processActions(service: any){
+		let actions = {};
+
+		Object.keys(service?.actions ?? {}).forEach((action: any) => {
+			(<any>actions)[`${action}`] = service?.actions[action];
+		});
+
+		(Object.values(service.entities) ?? []).forEach((entity: any) => {
+			Object.keys(entity?.actions ?? {}).forEach((action: any) => {
+				(<any>actions)[`${ABAPUtils.getABAPName(entity)}.${action}`] = entity?.actions[action];
+			});
+		});
+
+		this._writeActions(actions)
+	}
+
+	private _writeActions(actions: any): void {
+		let writer = new CodeWriter();
+
+		let getActionName = (action: any, actionKey: string): string => {
+			if(action?.["@segw.name"]){
+				return action?.["@segw.name"];
+			}
+			return actionKey;
+		}
+
+		writer.writeLine("data action type ref to /iwbep/if_mgw_odata_action.");
+		writer.writeLine("data parameter type ref to /iwbep/if_mgw_odata_parameter.");
+		writer.writeLine();
+
+		for(let actionKey of Object.keys(actions)){
+			let action = actions[actionKey];
+			let actionName = ABAPUtils.getABAPName(getActionName(action, actionKey)).replace(/\./g, '_');
+
+			let method = (<any>action?.["@segw.action.method"]) ?? "POST";
+
+			writer.writeLine(`action = me->model->create_action( '${actionName}' ).`);
+			writer.writeLine(`action->set_http_method( '${method}' ).`);
+			
+			if(action?.parent){
+				writer.writeLine(`action->set_action_for( '${ABAPUtils.getABAPName(action?.parent)}' ).`);
+			}
+			writer.writeLine();
+
+			for(let param of action?.params ?? []){
+				let paramName = (<any>param?.["@segw.name"]) ?? ABAPUtils.getABAPName(param);
+				let abapName = (<any>param?.["@segw.abap.name"]) ?? ABAPUtils.getABAPName(param);
+				writer.writeLine(`parameter = action->create_input_parameter( iv_paramenter_name = '${paramName}' iv_abap_fieldname = '${abapName}' ).`)
+				writer.writeLine(this._getSetEDMTypeString(param, "parameter->/iwbep/if_mgw_odata_property~"));
+			}
+
+			if(action?.params){
+				let inputType = this._class.publicSection?.types?.find((type: any) => {
+					return type.name === `t_${actionName}_input`;
+				});
+				if(!inputType){
+					LOG.warn(`Could not find type 't_${actionName}_input' for action ${actionName}` );
+					return;
+				}
+				let inputName = ("structure" in inputType) ? inputType.structure?.name : inputType.name;
+				writer.writeLine(`action->bind_input_structure( '${this._class.name}=>${inputName}' ).`);
+			}
+
+
+			let multiplicity = ("items" in action?.returns) ? Cardinality.cardinality_1_1 : Cardinality.cardinality_0_n;
+			writer.writeLine(`action->set_return_multiplicity( '${multiplicity}' ).`);
+
+			// Array
+			let returnEntity = Object.getPrototypeOf(action?.returns);
+			if("items" in action?.returns){
+				returnEntity = Object.getPrototypeOf(action.returns.items);
+			}
+			writer.writeLine(`action->set_return_entity_type( '${ABAPUtils.getABAPName(returnEntity)}' ).`);
+			writer.writeLine();
+		}
+
+		let code = writer.generate().split('\n');
+		this._class?.protectedSection?.methods?.push({
+			type: ABAPMethodType.MEMBER,
+			name: `define_actions`,
 			code: code
 		});
 	}

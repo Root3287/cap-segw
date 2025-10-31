@@ -89,7 +89,7 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 
 	public generate(): string {
 		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
-		const services = this._compilerInfo?.csn.services[namespace];
+		const service = this._compilerInfo?.csn.services[namespace];
 		let generator = new ABAPGenerator();
 
 		this._class.name = this.getFileName().split('.')[0];
@@ -97,7 +97,18 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		// TODO: Generate Types
 		
 		// Generate defines
-		for(const entity of services?.entities ?? []){
+		let actions = {};
+
+		Object.keys(service?.actions ?? {}).forEach((actionKey: string) => {
+			let actionName = (actionKey.split('.').length) ? actionKey.split('.').at(-1) : actionKey;
+			(<any>actions)[`${ABAPUtils.getABAPName(actionName)}`] = service?.actions[actionKey];
+		});
+
+		for(const entity of service?.entities ?? []){
+			Object.keys(entity?.actions ?? {}).forEach((action) => {
+				(<any>actions)[`${ABAPUtils.getABAPName(entity)}.${action}`] = entity?.actions[action];
+			});
+
 			this.addEntity(entity);
 		}
 
@@ -106,6 +117,8 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		this._handleUpdateEntity();
 		this._handleCreateEntity();
 		this._handleDeleteEntity();
+
+		this._handleActions(actions);
 
 		generator.setABAPClass(this._class);
 		return generator.generate();
@@ -579,6 +592,79 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		this._class?.publicSection?.methods?.push({
 			type: ABAPMethodType.MEMBER,
 			name: "/iwbep/if_mgw_appl_srv_runtime~delete_entity",
+			isRedefinition: true,
+			code: code
+		});
+	}
+
+	protected _handleActions(actions?: any){
+		let getActionName = (action: any, actionKey: string): string => {
+			if(action?.["@segw.name"]){
+				return action?.["@segw.name"];
+			}
+			return actionKey;
+		}
+
+		Object.keys(actions)?.forEach((actionKey: any) => {
+			let action = actions[actionKey];
+
+			let actionName = getActionName(action, actionKey).replace(/\./g, '_');
+
+			this._class?.protectedSection?.methods?.push({
+				type: ABAPMethodType.MEMBER,
+				name: `execute_${actionName}`,
+				importing: [
+					{ name: "action_name", 	referenceType: ABAPParameterReferenceType.TYPE, type: "string", isOptional: true },
+					{ name: "parameters", 	referenceType: ABAPParameterReferenceType.TYPE, type: "/iwbep/it_mgw_name_value_pair", isOptional: true },
+				],
+				raising: [
+					"/iwbep/cx_mgw_busi_exception",
+					"/iwbep/cx_mgw_tech_exception"
+				],
+				code: [
+					"RAISE EXCEPTION TYPE /iwbep/cx_mgw_not_impl_exc",
+					"\tEXPORTING",
+					"\t\ttextit = /iwbep/cx_mgw_not_impl_exc=>method_not_implemented",
+					`\t\tmethod = 'execute_${actionName}'.`
+				]
+			});
+		});
+
+		let writer = new CodeWriter();
+		writer.writeLine("CASE iv_action_name.").increaseIndent();
+		
+		for(let actionKey of Object.keys(actions)){
+			let action = actions[actionKey];
+			let actionName = getActionName(action, actionKey).replace(/\./g, '_');
+
+			writer.writeLine(`WHEN '${getActionName(action, actionKey)}'.`).increaseIndent();
+			writer.writeLine(`data(func_${actionName}) = me->execute_${actionName}(`).increaseIndent();
+			writer.writeLine(`action_name = '${getActionName(action, actionKey)}'`);
+			writer.writeLine(`parameters = it_parameter`);
+			writer.writeLine(`tech_request_context = io_tech_request_context`);
+			writer.decreaseIndent().writeLine(`).`).writeLine();
+			writer.writeLine(`me->copy_data_to_ref(`).increaseIndent();
+			writer.writeLine(`EXPORTING`).increaseIndent();
+			writer.writeLine(`is_data = func_${actionName}`);
+			writer.decreaseIndent().writeLine("CHANGING").increaseIndent();
+			writer.writeLine(`cr_data = er_entity`).decreaseIndent();
+			writer.decreaseIndent().writeLine(`).`).writeLine();
+			writer.decreaseIndent();
+		}
+		
+		writer.writeLine("when others.").increaseIndent();
+		writer.writeLine("super->/iwbep/if_mgw_appl_srv_runtime~execute_action(").increaseIndent();
+		writer.writeLine("iv_action_name = iv_action_name");
+		writer.writeLine("it_parameter = it_parameter");
+		writer.writeLine("io_tech_request_context = io_tech_request_context");
+		writer.decreaseIndent().writeLine(").");
+		writer.decreaseIndent();
+		writer.decreaseIndent().writeLine("ENDCASE.");
+
+		let code = writer.generate().split('\n');
+		this._class?.publicSection?.methods?.push({
+			type: ABAPMethodType.MEMBER,
+			name: "/iwbep/if_mgw_appl_srv_runtime~execute_action",
 			isRedefinition: true,
 			code: code
 		});
