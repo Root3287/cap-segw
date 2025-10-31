@@ -23,9 +23,29 @@ entity Room: cuid, managed {
 	@segw.association.ignore: true
 	location: Association to Location;
 	roomNumber: String(5);
+
+	roomState: String enum {
+		READY;
+		DIRTY;
+		CLEAN;
+	}
 }
 
 entity Customer: cuid, managed {
 	name: String;
 	billingAddress: Address;
+}
+
+entity Reservation: cuid, temporal, managed {
+	
+	@readonly
+	status: String enum {
+		DRAFT;
+		RESERVED;
+		IN_PROGRESS;
+		COMPLETED;
+	};
+
+	customer: Association to one Customer;
+	room: Association to one Room;
 }
