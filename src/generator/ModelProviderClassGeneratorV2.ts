@@ -114,69 +114,8 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 			
 			if(property?.key)
 				writer.writeLine("property->set_is_key( ).");
-			
-			switch(property.type){
-				case CDSPrimitive.UUID:
-					writer.writeLine("property->set_type_edm_guid( ).");
-					break;
-				case CDSPrimitive.Boolean:
-					writer.writeLine("property->set_type_edm_boolean( ).");
-					break;
-				case CDSPrimitive.Integer:
-					writer.writeLine("property->set_type_edm_int32( ).");
-					break;
-				case CDSPrimitive.Int16:
-					writer.writeLine("property->set_type_edm_int16( ).");
-					break;
-				case CDSPrimitive.Int32:
-					writer.writeLine("property->set_type_edm_int32( ).");
-					break;
-				case CDSPrimitive.Int64:
-					writer.writeLine("property->set_type_edm_int64( ).");
-					break;
-				case CDSPrimitive.UInt8:
-					writer.writeLine("property->set_type_edm_byte( ).");
-					break;
-				case CDSPrimitive.Decimal:
-					writer.writeLine("property->set_type_edm_decimal( ).");
-					break;
-				case CDSPrimitive.Double:
-					writer.writeLine("property->set_type_edm_double( ).");
-					break;
-				case CDSPrimitive.Date:
-					writer.writeLine("property->set_type_edm_date( ).");
-					break;
-				case CDSPrimitive.Time:
-					writer.writeLine("property->set_type_edm_time( ).");
-					break;
-				case CDSPrimitive.DateTime:
-					writer.writeLine("property->set_type_edm_datetime( ).");
-					break;
-				case CDSPrimitive.Timestamp:
-					writer.writeLine("property->set_type_edm_datetimeoffset( ).");
-					break;
-				case CDSPrimitive.String:
-					writer.writeLine("property->set_type_edm_string( ).");
-					break;
-				case CDSPrimitive.Binary:
-					writer.writeLine("property->set_type_edm_binary( ).");
-					break;
-				case CDSPrimitive.LargeBinary:
-					writer.writeLine("property->set_type_edm_binary( ).");
-					break;
-				case CDSPrimitive.LargeString:
-					writer.writeLine("property->set_type_edm_string( ).");
-					break;
-				case CDSPrimitive.Composition:
-				case CDSPrimitive.Association:
-				default:
-					let propertyPrototype = Object.getPrototypeOf(property);
-					if(propertyPrototype.kind === "type"){
-						// this.addStruct(propertyPrototype);
-					}
-					
-					break;
-			}
+
+			writer.writeLine(this._getSetEDMTypeString((<CDSPrimitive>property.type)));
 			
 			// Main OData Annotations
 			// writer.writeLine("property->set_precison( iv_precision = ).");
@@ -269,6 +208,7 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		typeConverter.setService(service);
 		if(this._class?.publicSection?.types)
 			this._class.publicSection.types = typeConverter.getABAPTypes();
+
 		
 		// Generate defines
 		for(const entity of service?.entities ?? []){
@@ -306,6 +246,72 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 
 		generator.setABAPClass(this._class);
 		return generator.generate();
+	}
+
+	/**
+	 * This convert CDSPrimative to a line that the writer can write out
+	 * @param  {CDSPrimitive} type type to convert
+	 * @param  {string    =    "property"}  propertyVarName name of the property varible
+	 * @return {string}            line to write out
+	 */
+	private _getSetEDMTypeString(type: CDSPrimitive, propertyVarName: string = "property->"): string | undefined {
+		switch(type){
+			case CDSPrimitive.UUID:
+				return `${propertyVarName}set_type_edm_guid( ).`;
+				break;
+			case CDSPrimitive.Boolean:
+				return `${propertyVarName}set_type_edm_boolean( ).`;
+				break;
+			case CDSPrimitive.Integer:
+				return `${propertyVarName}set_type_edm_int32( ).`;
+				break;
+			case CDSPrimitive.Int16:
+				return `${propertyVarName}set_type_edm_int16( ).`;
+				break;
+			case CDSPrimitive.Int32:
+				return `${propertyVarName}set_type_edm_int32( ).`;
+				break;
+			case CDSPrimitive.Int64:
+				return `${propertyVarName}set_type_edm_int64( ).`;
+				break;
+			case CDSPrimitive.UInt8:
+				return `${propertyVarName}set_type_edm_byte( ).`;
+				break;
+			case CDSPrimitive.Decimal:
+				return `${propertyVarName}set_type_edm_decimal( ).`;
+				break;
+			case CDSPrimitive.Double:
+				return `${propertyVarName}set_type_edm_double( ).`;
+				break;
+			case CDSPrimitive.Date:
+				return `${propertyVarName}set_type_edm_date( ).`;
+				break;
+			case CDSPrimitive.Time:
+				return `${propertyVarName}set_type_edm_time( ).`;
+				break;
+			case CDSPrimitive.DateTime:
+				return `${propertyVarName}set_type_edm_datetime( ).`;
+				break;
+			case CDSPrimitive.Timestamp:
+				return `${propertyVarName}set_type_edm_datetimeoffset( ).`;
+				break;
+			case CDSPrimitive.String:
+				return `${propertyVarName}set_type_edm_string( ).`;
+				break;
+			case CDSPrimitive.Binary:
+				return `${propertyVarName}set_type_edm_binary( ).`;
+				break;
+			case CDSPrimitive.LargeBinary:
+				return `${propertyVarName}set_type_edm_binary( ).`;
+				break;
+			case CDSPrimitive.LargeString:
+				return `${propertyVarName}set_type_edm_string( ).`;
+				break;
+			case CDSPrimitive.Composition:
+			case CDSPrimitive.Association:
+			default:
+				break;
+		}
 	}
 
 	private _getAssociations(service: any) {
