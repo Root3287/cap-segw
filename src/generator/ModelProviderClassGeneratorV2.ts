@@ -362,11 +362,22 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 
 			// Create the Contraints
 			// TODO: Handle many constraints
-			writer.writeLine(`ref_constraint = association->create_ref_constraint( ).`);
-			writer.writeLine(`ref_constraint->add_property(`).increaseIndent();
-			writer.writeLine(`iv_principal_property = '${association.on[0].ref[0]}'`);
-			writer.writeLine(`iv_dependent_property = '${association.on[0].ref[1]}'`);
-			writer.decreaseIndent().writeLine(`).`);
+			if(association?.foreignKeys){
+				writer.writeLine(`ref_constraint = association->create_ref_constraint( ).`);
+				writer.writeLine(`ref_constraint->add_property(`).increaseIndent();
+				writer.writeLine(`iv_principal_property = '${association.name}'`);
+				writer.writeLine(`iv_dependent_property = '${(<any>Object.values(association?.foreignKeys)?.[0])?.name}'`);
+				writer.decreaseIndent().writeLine(`).`);
+			}
+			if(association?.on){
+				let principalProperty = association.on[0].ref.slice(1).join('.');
+				let dependentProperty = association.on[2].ref.filter((item: string) => item !== "$self")[0];
+				writer.writeLine(`ref_constraint = association->create_ref_constraint( ).`);
+				writer.writeLine(`ref_constraint->add_property(`).increaseIndent();
+				writer.writeLine(`iv_principal_property = '${principalProperty}'`);
+				writer.writeLine(`iv_dependent_property = '${dependentProperty}'`);
+				writer.decreaseIndent().writeLine(`).`);
+			}
 
 			// Create Association Set
 			let getEntitySetName = (entity: entity): string => (<any>entity)?.["@segw.set.name"] ?? `${ABAPUtils.getABAPName(entity)}Set`;
