@@ -23,19 +23,19 @@ export default class CDSTypeConverter {
 			return existsInStructures || existsInTypeAlias;
 		}
 
-		let handleTypeAlias = (propertyType: string, propertyPrototypePrimative: string) => {
-			if(checkIfTypeExists(propertyType)) return;
+		let handleTypeAlias = (propertyPrototypePrimative: string, propertyTypeName: string) => {
+			if(checkIfTypeExists(propertyTypeName)) return;
 
 			this._types?.push({
-				name: propertyType,
+				name: propertyTypeName,
 				referenceType: ABAP.ParameterReferenceType.TYPE,
 				type: propertyPrototypePrimative
 			});
 			this._types?.push({
 				structure: { 
-					name: `t${propertyType}`, 
+					name: `t${propertyTypeName}`, 
 					referenceType: ABAP.ParameterReferenceType.TYPE_STANDARD_TABLE, 
-					type: propertyType 
+					type: propertyTypeName
 				}
 			});
 		};
@@ -94,14 +94,16 @@ export default class CDSTypeConverter {
 				// Check if type is actually in Prototype
 				// If it is it's a type alias
 				if(!propertyType && property.kind === "element" && propertyPrototypePrimative){
-					propertyType = `t_${ABAPUtils.getABAPName(property.type)}`;
-					handleTypeAlias(propertyType, propertyPrototypePrimative);
+					let pName = (property.type.split('.').length) ? property.type.split('.').at(-1) : property.type;
+					propertyType = `t_${ABAPUtils.getABAPName(pName)}`;
+					handleTypeAlias(propertyPrototypePrimative, propertyType);
 				}
 
 				// Check if Complex Type
 				if(!propertyType && property.kind === "element" && propertyPrototype?.kind === "type"){
-					propertyType = `t_${ABAPUtils.getABAPName(property.type)}`;
-					this._createType(property, property.type);
+					let pName = (property.type.split('.').length) ? property.type.split('.').at(-1) : property.type;
+					propertyType = `${ABAPUtils.getABAPName(pName)}`;
+					this._createType(property, propertyType);
 				}
 			}
 
