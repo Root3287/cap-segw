@@ -14,43 +14,33 @@ export default class CDSTypeConverter {
 		this._service = service;
 	}
 
-	private _createType(entity: any , name: string): void {
+	private _createTypeAlias(name: string, type: string){
 		let typeName = `t_${name}`;
+		let typeExists = this._types?.find(s => ("name" in s && s?.name === typeName) || ("structure" in s && s?.structure?.name === typeName));
+		if(typeExists) return;
 
-		let checkIfTypeExists = (type: string) => {
-			let existsInStructures = this._types?.find(s => "name" in s && s?.name === type);
-			let existsInTypeAlias = this._types?.find(s => "name" in s && s?.name === type);
-			return existsInStructures || existsInTypeAlias;
-		}
+		this?._types?.push({
+			name: typeName,
+			referenceType: ABAP.ParameterReferenceType.TYPE,
+			type: type
+		});
+		this._types?.push({
+			structure: { 
+				name: `t${typeName}`, 
+				referenceType: ABAP.ParameterReferenceType.TYPE_STANDARD_TABLE, 
+				type: typeName
+			}
+		});
+	}
 
-		let handleTypeAlias = (propertyPrototypePrimative: string, propertyTypeName: string) => {
-			if(checkIfTypeExists(propertyTypeName)) return;
-
-			this._types?.push({
-				name: propertyTypeName,
-				referenceType: ABAP.ParameterReferenceType.TYPE,
-				type: propertyPrototypePrimative
-			});
-			this._types?.push({
-				structure: { 
-					name: `t${propertyTypeName}`, 
-					referenceType: ABAP.ParameterReferenceType.TYPE_STANDARD_TABLE, 
-					type: propertyTypeName
-				}
-			});
-		};
-
-		if(checkIfTypeExists(typeName)){
-			return;
-		}
+	private _createEntityType(name: string, entity: any): void {
+		let typeName = `t_${name}`;
+		let typeExists = this._types?.find(s => ("name" in s && s?.name === typeName) || ("structure" in s && s?.structure?.name === typeName));
+		if(typeExists) return;
 
 		// Check if pre-defined. If so we create a type alias.
 		if((<any>entity)?.["@segw.abap.type"]){
-			this._types?.push({
-				name: typeName,
-				referenceType: ABAP.ParameterReferenceType.TYPE,
-				type: (<any>entity)?.["@segw.abap.type"]
-			})
+			this._createTypeAlias(name, (<any>entity)?.["@segw.abap.type"]);
 			return;
 		}
 
@@ -96,14 +86,14 @@ export default class CDSTypeConverter {
 				if(!propertyType && property.kind === "element" && propertyPrototypePrimative){
 					let pName = (property.type.split('.').length) ? property.type.split('.').at(-1) : property.type;
 					propertyType = `t_${ABAPUtils.getABAPName(pName)}`;
-					handleTypeAlias(propertyPrototypePrimative, propertyType);
+					this._createTypeAlias(pName, propertyPrototypePrimative);
 				}
 
 				// Check if Complex Type
 				if(!propertyType && property.kind === "element" && propertyPrototype?.kind === "type"){
 					let pName = (property.type.split('.').length) ? property.type.split('.').at(-1) : property.type;
 					propertyType = `${ABAPUtils.getABAPName(pName)}`;
-					this._createType(property, propertyType);
+					this._createEntityType(propertyType, property);
 				}
 			}
 
@@ -134,7 +124,7 @@ export default class CDSTypeConverter {
 	public getABAPTypes(): Array<ABAP.Structure | ABAP.Parameter | ABAP.Table> {
 		this._types = [];
 		for(let entity of this._service?.entities ?? []){
-			this._createType(entity, ABAPUtils.getABAPName(entity));
+			this._createEntityType(ABAPUtils.getABAPName(entity), entity);
 		}
 		return this._types;
 	}
