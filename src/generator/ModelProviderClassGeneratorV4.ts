@@ -11,6 +11,7 @@ import { CompilerInfo } from "../types/frontend";
 import CodeWriter from "./CodeWriter";
 
 import CDSTypeConverter from "../converters/CDSTypeConverter";
+import { CDS as CDSUtils } from "../utils/CDS";
 
 import { ABAP as ABAPUtils } from "../utils/ABAP";
 
@@ -94,18 +95,16 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 		writer.writeLine("entity_set TYPE REF TO /iwbep/if_v4_med_entity_set,");
 		writer.writeLine("nav_property TYPE REF TO /iwbep/if_v4_med_nav_prop,");
 		// TODO: Create Types
-		// writer.writeLine(`referenced_entity TYPE ${this._class.name}~${this._class.publicSection.types[entity.name]}`);
+		writer.writeLine(`referenced_entity TYPE ${this._class.name}~t_${entityName}`);
 		writer.decreaseIndent().writeLine().writeLine();
 
 		writer.writeLine(`" Create Entity Type`);
 		writer.writeLine("entity_type = io_model->create_entity_type_by_struct( ").increaseIndent();
-		writer.writeLine("EXPORTING").increaseIndent();
-		writer.writeLine(`iv_entity_type_name = ${entity.name}`);
+		writer.writeLine(`iv_entity_type_name = '${entityName}'`);
 		writer.writeLine(`is_structure = referenced_entity`);
 		writer.writeLine(`iv_add_conv_to_prim_props = abap_true`);
 		writer.writeLine(`iv_add_f4_help_to_prim_props = abap_true`);
 		writer.writeLine(`iv_gen_prim_props = abap_true`);
-		writer.decreaseIndent();
 		writer.decreaseIndent().writeLine(").").writeLine();
 
 		writer.writeLine(`" Set External EDM name for entity type`);
@@ -150,6 +149,8 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 			this.addEntity(entity);
 		}
 
+		this._processActions(service);
+
 		// let associations = this._getAssociations(service);
 		// this._writeAssociations(associations);
 		this._class.publicSection ??= { type: ABAPClassSectionType.PUBLIC };
@@ -158,11 +159,114 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 			type: ABAPMethodType.MEMBER,
 			isRedefinition: true,
 			code: [
-				...this._entityDefineMethods.map((method) => `me->${method}( io_model ).`)
+				...this._entityDefineMethods.map((method) => `me->${method}( io_model ).`),
+				"me->define_actions( io_model )."
 			],
 		};
 
 		generator.setABAPClass(this._class);
 		return generator.generate();
+	}
+
+	private _processActions(service: any){
+		let actions = {};
+
+		let writer = new CodeWriter();
+
+		writer.writeLine("data action type ref to /iwbep/if_v4_med_action.");
+		writer.writeLine("data action_import type ref to /iwbep/if_v4_med_action_imp.");
+		writer.writeLine("data action_parameter type ref to /iwbep/if_v4_med_act_param.");
+		writer.writeLine("data action_return type ref to /iwbep/if_v4_med_act_return.");
+		writer.writeLine();
+		writer.writeLine("data function type ref to /iwbep/if_v4_med_function.");
+		writer.writeLine("data function_import type ref to /iwbep/if_v4_med_function_imp.");
+		writer.writeLine("data function_parameter type ref to /iwbep/if_v4_med_func_param.");
+		writer.writeLine("data function_return type ref to /iwbep/if_v4_med_func_return.");
+		writer.writeLine();
+
+		Object.keys(service?.actions ?? {}).forEach((action: any) => {
+			this._writeActions(writer, service?.actions[action]);
+		});
+
+		(Object.values(service.entities) ?? []).forEach((entity: any) => {
+			Object.keys(entity?.actions ?? {}).forEach((action: any) => {
+				this._writeActions(writer, entity?.actions[action]);
+			});
+		});
+
+		let code = writer.generate().split('\n');
+		this._class.protectedSection ??= { type: ABAPClassSectionType.PROTECTED };
+		this._class.protectedSection.methods ??= {};
+		this._class.protectedSection.methods[`define_actions`] = {
+			type: ABAPMethodType.MEMBER,
+			importing: [
+				{ name: "model", referenceType: ABAPParameterReferenceType.TYPE_REF, type: ""}
+			],
+			code: code
+		}
+	}
+
+	private _writeActions(writer: CodeWriter, action: any): void {
+		let getActionName = (action: any): string => {
+			if(action?.["@segw.name"]){
+				return action?.["@segw.name"];
+			}
+			return action.name;
+		}
+
+		let actionName = ABAPUtils.getABAPName(getActionName(action));
+		let actionABAPName = ABAPUtils.getABAPName(getActionName(action)).replace(/\./g, '_');
+
+		// TODO: This could be re-written as the following ABAP
+		// try.
+		// 	action = model->get_action( |${actionName| ).
+		// catch /iwbep/cx_gateway.
+		// 	action = model->create_action( |${actionName}| ).
+		// endtry.
+		writer.writeLine(`${action.kind} = model->create_${action.kind}( |${actionName}| ).`);
+		
+		if(!action?.parent){
+			writer.writeLine(`${action.kind}_import = ${action.kind}->create_${action.kind}_import( ).`);
+		}else{
+			writer.writeLine(`${action.kind}_parameter = ${action.kind}->create_parameter( 'parent' ).`);
+			writer.writeLine(`${action.kind}_parameter->set_is_binding_parameter( ).`);
+			writer.writeLine(`${action.kind}_parameter->set_entity_type( '${ABAPUtils.getABAPName(action.parent)}' ).`);
+		}
+		writer.writeLine();
+
+		for(let param of (action?.params ?? [])) {
+			writer.writeLine(`${action.kind}_parameter = ${action.kind}->create_parameter( '${param.name}' ).`);
+			let paramPrototype = Object.getPrototypeOf(param);
+			let primative = CDSUtils.cds2edm(param.type);
+			if(primative){
+				writer.writeLine(`${action.kind}_parameter->set_primative_type( '${primative}' ).`);
+			}else if(paramPrototype?.kind === "entity"){
+				writer.writeLine(`${action.kind}_parameter->set_entity_type( '${ABAPUtils.getABAPName(paramPrototype)}' ).`);
+			}else if(paramPrototype?.kind === "type"){
+				// TODO: Flatten Complex Param
+			}
+		}
+
+		writer.writeLine();
+
+		writer.writeLine(`${action.kind}_return = ${action.kind}->create_return( ).`);
+		if(!action?.returns){
+			writer.writeLine(`${action.kind}_return->set_is_nullable( ).`);
+		}else{
+			if("items" in action?.returns){
+				writer.writeLine(`${action.kind}_return->set_is_collection( ).`);
+			}
+
+			let returnEntity = Object.getPrototypeOf(("items" in action?.returns) ? action.returns.items : action.returns);
+			let primative = CDSUtils.cds2edm(action.returns);
+			if(primative){
+				writer.writeLine(`${action.kind}_return->set_primative_type( '${primative}' ).`);
+			}else if(returnEntity?.kind === "type"){
+				writer.writeLine(`${action.kind}_return->set_complex_type( '${ABAPUtils.getABAPName(returnEntity)}' ).`);
+			}else if(returnEntity?.kind === "entity"){
+				writer.writeLine(`${action.kind}_return->set_entity_type( '${ABAPUtils.getABAPName(returnEntity)}' ).`);
+			}
+		}
+		writer.writeLine();
 	}
 }
