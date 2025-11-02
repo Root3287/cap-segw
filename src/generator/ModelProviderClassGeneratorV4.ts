@@ -152,10 +152,10 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 
 		// let associations = this._getAssociations(service);
 		// this._writeAssociations(associations);
-
-		this.class.publicSection.methods["/iwbep/if_v4_mp_basic~define"] = {
+		this._class.publicSection ??= { type: ABAPClassSectionType.PUBLIC };
+		this._class.publicSection.methods ??= {};
+		this._class.publicSection.methods["/iwbep/if_v4_mp_basic~define"] = {
 			type: ABAPMethodType.MEMBER,
-			name: "/iwbep/if_v4_mp_basic~define",
 			isRedefinition: true,
 			code: [
 				...this._entityDefineMethods.map((method) => `me->${method}( io_model ).`)
