@@ -52,31 +52,32 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 	}
 
 	public addEntity(entity: entity): void {
-		this._entityAction(Method.LIST, ABAPUtils.getABAPName(entity), entity);
-		this._entityAction(Method.CREATE, ABAPUtils.getABAPName(entity), entity);
-		this._entityAction(Method.READ, ABAPUtils.getABAPName(entity), entity);
-		this._entityAction(Method.UPDATE, ABAPUtils.getABAPName(entity), entity);
-		this._entityAction(Method.DELETE, ABAPUtils.getABAPName(entity), entity);
+		this._entityCRUDQAction(Method.LIST, entity);
+		this._entityCRUDQAction(Method.CREATE, entity);
+		this._entityCRUDQAction(Method.READ, entity);
+		this._entityCRUDQAction(Method.UPDATE, entity);
+		this._entityCRUDQAction(Method.DELETE, entity);
 	};
 
-	private _entityAction(method: Method, entityName: string, entity: entity){
+	private _entityCRUDQAction(method: Method, entity: entity){
+		let entityName = ABAPUtils.getABAPName(entity);
 		let methodName = `${entityName}_${method}`;
 		this._class.protectedSection ??= { type: ABAPClassSectionType.PROTECTED };
 		this._class.protectedSection.methods ??= {};
 		this._class.protectedSection.methods[methodName] = {
 			type: ABAP.MethodType.MEMBER,
 			importing: [
-				{ name: "request", 	referenceType: ABAP.ParameterReferenceType.TYPE_REF, type: "/iwbep/if_v4_resp_basic_create" },
-				{ name: "response", referenceType: ABAP.ParameterReferenceType.TYPE_REF, type: "/iwbep/if_v4_requ_basic_create" },
+				{ name: "request", 	referenceType: ABAP.ParameterReferenceType.TYPE_REF, type: `/iwbep/if_v4_resp_basic_${method}` },
+				{ name: "response", referenceType: ABAP.ParameterReferenceType.TYPE_REF, type: `/iwbep/if_v4_requ_basic_${method}` },
 			],
 			raising: [
 				"/IWBEP/CX_GATEWAY"
 			],
 			code: [
-				"data todo_list type /iwbep/if_v4_requ_basic_create=>ty_s_todo_list.",
+				`data todo_list type /iwbep/if_v4_requ_basic_${method}=>ty_s_todo_list.`,
 				"request->get_todos( importing es_todo_list = todo_list ).",
 				"",
-				"data done_list type /iwbep/if_v4_requ_basic_create=>ty_s_todo_process_list.",
+				`data done_list type /iwbep/if_v4_requ_basic_${method}=>ty_s_todo_process_list.`,
 				"response->set_is_done( done_list ).",
 			]
 		};
@@ -90,7 +91,7 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 		writer.writeLine();
 		writer.writeLine("CASE entityset_name.").increaseIndent();
 		for(let entity of entities ?? []){
-			let entitySetName = (<any>entity)?.["@segw.set.name"] ?? `${ABAPUtils.getABAPName(entity)}Set`;
+			let entitySetName = (<any>entity)?.["@segw.set.name"] ?? `${ABAPUtils.getABAPName(entity)}`;
 			writer.writeLine(`WHEN ${entitySetName}.`).increaseIndent();
 			writer.writeLine(`me->${entitySetName}_${method}(`).increaseIndent();
 			writer.writeLine(`request = io_request`);
@@ -127,6 +128,10 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 		}
 
 		this._handleCRUDQ(Method.LIST, service?.entities ?? []);
+		this._handleCRUDQ(Method.CREATE, service?.entities ?? []);
+		this._handleCRUDQ(Method.READ, service?.entities ?? []);
+		this._handleCRUDQ(Method.UPDATE, service?.entities ?? []);
+		this._handleCRUDQ(Method.DELETE, service?.entities ?? []);
 
 		generator.setABAPClass(this._class);
 		return generator.generate();
