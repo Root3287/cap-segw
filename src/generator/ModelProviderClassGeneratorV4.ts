@@ -21,7 +21,7 @@ const LOG = cds.log("segw");
 export default class ModelProviderClassGeneratorV4 implements IFServiceClassGenerator {
 	private _class: ABAPClass = { 
 		name: "",
-		interfaces: [],
+		inheriting: [],
 		publicSection: {
 			type: ABAPClassSectionType.PUBLIC,
 			types: [],
@@ -42,7 +42,7 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 	private _compilerInfo?: CompilerInfo;
 
 	public constructor(){
-		this._class.interfaces?.push("/iwbep/cl_v4_abs_model_prov");
+		this._class.inheriting?.push("/iwbep/cl_v4_abs_model_prov");
 	}
 
 	public setCompilerInfo(compilerInfo: CompilerInfo): void {
