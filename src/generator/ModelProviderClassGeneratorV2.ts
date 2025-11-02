@@ -79,6 +79,13 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 			LOG.warn(`Method ${methodName} too long. Consider shortening it with @segw.mpc.define.name`);
 		}
 
+		this._class.protectedSection ??= { type: ABAPClassSectionType.PROTECTED };
+		this._class.protectedSection.methods ??= {};
+		if(methodName in this._class.protectedSection.methods){
+			LOG.warn(`Entity ${entityName} has already been defined. Skipping`);
+			return;
+		}
+
 		
 		let defineEntityMethod: ABAPMethod = {
 			type: ABAPMethodType.MEMBER,
