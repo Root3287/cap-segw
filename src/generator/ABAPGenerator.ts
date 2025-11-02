@@ -75,8 +75,10 @@ export default class ABAPGenerator implements IFCodeGenerator {
 		});
 		
 		// Write Methods
-		section?.methods?.forEach((method)=>{
-			this._writeMethodDefinition(method);
+		if(!section?.methods) return;
+		Object.keys(section.methods).forEach((method: string)=>{
+			if(!section?.methods?.[method]) return;
+			this._writeMethodDefinition(method, section.methods[method]);
 			this._writer.writeLine();
 		});
 	}
@@ -144,10 +146,10 @@ export default class ABAPGenerator implements IFCodeGenerator {
 	 * 
 	 * @param {ABAPMethod} method Method to write
 	 */
-	private _writeMethodDefinition(method: ABAP.Method): void {
+	private _writeMethodDefinition(methodName: string, method: ABAP.Method): void {
 		this._writer.increaseIndent();
 
-		let methodDefinition = `${method.type}S ${method.name}`;
+		let methodDefinition = `${method.type}S ${methodName}`;
 		if(method.isRedefinition) methodDefinition += " REDEFINITION.";
 		if(method.isFinal) methodDefinition += " FINAL";
 		this._writer.writeLine(methodDefinition);
@@ -204,17 +206,21 @@ export default class ABAPGenerator implements IFCodeGenerator {
 		this._writer.writeLine(`CLASS ${this._class.name} IMPLEMENTATION.`);
 		this._writer.increaseIndent();
 
-		let methods: ABAP.Method[] = [];
-		if(this._class?.publicSection?.methods)
-			methods.push(...this._class?.publicSection?.methods);
-		if(this._class?.protectedSection?.methods)
-			methods.push(...this._class?.protectedSection?.methods);
-		if(this._class?.privateSection?.methods)
-			methods.push(...this._class?.privateSection?.methods);
-
-		methods.forEach((method) => {
-			this._writeMethodImplementation(method);
-		})
+		if(this._class?.publicSection?.methods){
+			Object.keys(this?._class?.publicSection?.methods).forEach((methodName) => {
+				this._writeMethodImplementation(methodName, this?._class?.publicSection?.methods?.[methodName]);
+			});
+		}
+		if(this._class?.protectedSection?.methods){
+			Object.keys(this?._class?.protectedSection?.methods).forEach((methodName) => {
+				this._writeMethodImplementation(methodName, this?._class?.protectedSection?.methods?.[methodName]);
+			});
+		}
+		if(this._class?.privateSection?.methods){
+			Object.keys(this?._class?.privateSection?.methods).forEach((methodName) => {
+				this._writeMethodImplementation(methodName, this?._class?.privateSection?.methods?.[methodName]);
+			});
+		}
 
 		this._writer.decreaseIndent();
 		this._writer.writeLine(`ENDCLASS.`);
@@ -230,8 +236,9 @@ export default class ABAPGenerator implements IFCodeGenerator {
 	 * 
 	 * @param {ABAPMethod} method Method to write
 	 */
-	private _writeMethodImplementation(method: ABAP.Method): void {
-		this._writer.writeLine(`METHOD ${method.name}.`).increaseIndent();
+	private _writeMethodImplementation(methodName: string, method?: ABAP.Method): void {
+		if(!method) return;
+		this._writer.writeLine(`METHOD ${methodName}.`).increaseIndent();
 		method?.code?.forEach((c) => {
 			this._writer.writeLine(c);
 		})

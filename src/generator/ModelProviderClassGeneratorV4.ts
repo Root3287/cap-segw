@@ -25,15 +25,15 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 		publicSection: {
 			type: ABAPClassSectionType.PUBLIC,
 			types: [],
-			methods: [],
+			methods: {},
 		},
 		protectedSection: {
 			type: ABAPClassSectionType.PROTECTED,
-			methods: [],
+			methods: {},
 		},
 		privateSection: {
 			type: ABAPClassSectionType.PRIVATE,
-			methods: [],
+			methods: {},
 		}, 
 	};
 
@@ -74,7 +74,6 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 		
 		let defineEntityMethod: ABAPMethod = {
 			type: ABAPMethodType.MEMBER,
-			name: methodName,
 			importing: [
 				{name: "model", referenceType: ABAPParameterReferenceType.TYPE_REF, type: "/iwbep/if_v4_med_model"}
 			],
@@ -123,8 +122,8 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 		writer.writeLine();
 
 		defineEntityMethod.code = writer.generate().split("\n");
-		this._entityDefineMethods.push(defineEntityMethod.name);
-		this._class?.protectedSection?.methods?.push(defineEntityMethod);
+		this._entityDefineMethods.push(methodName);
+		this._class.protectedSection.methods[methodName] = defineEntityMethod;
 	};
 
 	public generate(): string {
@@ -147,14 +146,14 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 		// let associations = this._getAssociations(service);
 		// this._writeAssociations(associations);
 
-		this._class?.publicSection?.methods?.push({
+		this.class.publicSection.methods["/iwbep/if_v4_mp_basic~define"] = {
 			type: ABAPMethodType.MEMBER,
 			name: "/iwbep/if_v4_mp_basic~define",
 			isRedefinition: true,
 			code: [
 				...this._entityDefineMethods.map((method) => `me->${method}( io_model ).`)
 			],
-		});
+		};
 
 		generator.setABAPClass(this._class);
 		return generator.generate();

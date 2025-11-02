@@ -50,7 +50,6 @@ export type MethodParameters = {
 
 export type Method = {
 	type: MethodType;
-	name: string;
 	isFinal?: boolean;
 	isRedefinition?: boolean;
 	importing?: MethodParameters[];
@@ -97,7 +96,7 @@ export type ClassSection = {
 	type: ClassSectionType;
 	types?: Array<Structure | Parameter | Table>;
 	parameters?: Parameter[];
-	methods?: Method[];
+	methods?: Record<string, Method>;
 };
 
 export type Class = {

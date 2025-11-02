@@ -1,7 +1,7 @@
 import IFServiceClassGenerator from "./IFServiceClassGenerator";
 import ABAPGenerator from "./ABAPGenerator"; 
 import * as ABAP from "../types/abap";
-import { Class as ABAPClass } from "../types/abap";
+import { Class as ABAPClass, ClassSectionType as ABAPClassSectionType} from "../types/abap";
 import { CompilerInfo } from "../types/frontend";
 import { ABAP as ABAPUtils } from "../utils/ABAP";
 
@@ -25,15 +25,15 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 		publicSection: {
 			type: ABAP.ClassSectionType.PUBLIC,
 			types: [],
-			methods: [],
+			methods: {},
 		},
 		protectedSection: {
 			type: ABAP.ClassSectionType.PROTECTED,
-			methods: [],
+			methods: {},
 		},
 		privateSection: {
 			type: ABAP.ClassSectionType.PRIVATE,
-			methods: [],
+			methods: {},
 		},  
 	};
 
@@ -61,9 +61,10 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 
 	private _entityAction(method: Method, entityName: string, entity: entity){
 		let methodName = `${entityName}_${method}`;
-		this._class?.protectedSection?.methods?.push({
+		this._class.protectedSection ??= { type: ABAPClassSectionType.PROTECTED };
+		this._class.protectedSection.methods ??= {};
+		this._class.protectedSection.methods[methodName] = {
 			type: ABAP.MethodType.MEMBER,
-			name: methodName,
 			importing: [
 				{ name: "request", 	referenceType: ABAP.ParameterReferenceType.TYPE_REF, type: "/iwbep/if_v4_resp_basic_create" },
 				{ name: "response", referenceType: ABAP.ParameterReferenceType.TYPE_REF, type: "/iwbep/if_v4_requ_basic_create" },
@@ -78,10 +79,10 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 				"data done_list type /iwbep/if_v4_requ_basic_create=>ty_s_todo_process_list.",
 				"response->set_is_done( done_list ).",
 			]
-		});
+		};
 	}
 
-	public _handleAction(method: Method, entities: any){
+	public _handleCRUDQ(method: Method, entities: any){
 		let writer = new CodeWriter();
 		writer.writeLine("data entityset_name type /iwbep/if_v4_med_element=>ty_e_med_internal_name.");
 		writer.writeLine();
@@ -105,12 +106,13 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 		writer.decreaseIndent();
 		writer.decreaseIndent().writeLine("ENDCASE.");
 		let code = writer.generate().split('\n');
-		this._class?.publicSection?.methods?.push({
+		this._class.publicSection ??= { type: ABAPClassSectionType.PUBLIC };
+		this._class.publicSection.methods ??= {};
+		this._class.publicSection.methods[`/iwbep/if_v4_dp_basic~${method}_entity`] = {
 			type: ABAP.MethodType.MEMBER,
-			name: `/iwbep/if_v4_dp_basic~${method}_entity`,
 			isRedefinition: true,
 			code: code
-		});
+		};
 	}
 
 	public generate(): string {
@@ -120,11 +122,11 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 
 		this._class.name = this.getFileName().split('.')[0];
 
-		this._handleAction(Method.LIST, service?.entities ?? []);
-
 		for(const entity of service?.entities ?? []){
 			this.addEntity(entity);
 		}
+
+		this._handleCRUDQ(Method.LIST, service?.entities ?? []);
 
 		generator.setABAPClass(this._class);
 		return generator.generate();

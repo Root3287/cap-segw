@@ -32,15 +32,15 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		publicSection: {
 			type: ABAPClassSectionType.PUBLIC,
 			types: [],
-			methods: [],
+			methods: {},
 		},
 		protectedSection: {
 			type: ABAPClassSectionType.PROTECTED,
-			methods: [],
+			methods: {},
 		},
 		privateSection: {
 			type: ABAPClassSectionType.PRIVATE,
-			methods: [],
+			methods: {},
 		}, 
 	};
 
@@ -82,7 +82,6 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		
 		let defineEntityMethod: ABAPMethod = {
 			type: ABAPMethodType.MEMBER,
-			name: methodName,
 			raising: [ "/iwbep/cx_mgw_med_exception"]
 		};
 
@@ -193,8 +192,8 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		writer.writeLine();
 
 		defineEntityMethod.code = writer.generate().split("\n");
-		this._entityDefineMethods.push(defineEntityMethod.name);
-		this._class?.protectedSection?.methods?.push(defineEntityMethod);
+		this._entityDefineMethods.push(methodName);
+		this._class.protectedSection.methods[methodName] = defineEntityMethod;
 	};
 
 	public generate(): string {
@@ -220,9 +219,10 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 
 		this._processActions(service);
 
-		this._class?.publicSection?.methods?.push({
+		this._class.publicSection ??= { type: ABAPClassSectionType.PUBLIC };
+		this._class.publicSection.methods ??= {};
+		this._class.publicSection.methods["define"] = {
 			type: ABAPMethodType.MEMBER,
-			name: "define",
 			isRedefinition: true,
 			code: [
 				`model->set_schema_namespace( |${namespace}| ).`,
@@ -231,11 +231,10 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 				"me->define_associations( ).",
 				"me->define_actions( )."
 			],
-		});
+		};
 
-		this._class?.publicSection?.methods?.push({
+		this._class.publicSection.methods["get_last_modified"] = {
 			type: ABAPMethodType.MEMBER,
-			name: "get_last_modified",
 			isRedefinition: true,
 			code: [
 				// TODO: UPDATE DATE TIME
@@ -245,7 +244,7 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 				"\trv_last_modified = lc_gen_date_time.",
 				"ENDIF."
 			]
-		});
+		};
 
 		generator.setABAPClass(this._class);
 		return generator.generate();
@@ -426,12 +425,14 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		}
 
 		let code = writer.generate().split('\n');
-		this._class?.protectedSection?.methods?.push({
+
+		this._class.protectedSection ??= { type: ABAPClassSectionType.PROTECTED };
+		this._class.protectedSection.methods ??= {};
+		this._class.protectedSection.methods["define_associations"] = {
 			type: ABAPMethodType.MEMBER,
-			name: "define_associations",
 			isRedefinition: true,
 			code: code
-		});
+		};
 	}
 
 	private _processActions(service: any){
@@ -511,10 +512,11 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		}
 
 		let code = writer.generate().split('\n');
-		this._class?.protectedSection?.methods?.push({
+		this._class.protectedSection ??= { type: ABAPClassSectionType.PROTECTED };
+		this._class.protectedSection.methods ??= {};
+		this._class.protectedSection.methods["define_actions"] = {
 			type: ABAPMethodType.MEMBER,
-			name: `define_actions`,
 			code: code
-		});
+		};
 	}
 }

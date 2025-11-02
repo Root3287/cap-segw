@@ -24,16 +24,16 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		publicSection: {
 			type: ABAPClassSectionType.PUBLIC,
 			types: [],
-			methods: [],
+			methods: {},
 		},
 		protectedSection: {
 			type: ABAPClassSectionType.PROTECTED,
 			parameters: [],
-			methods: [],
+			methods: {},
 		},
 		privateSection: {
 			type: ABAPClassSectionType.PRIVATE,
-			methods: [],
+			methods: {},
 		}, 
 	};
 
@@ -84,7 +84,7 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		// let writer = new CodeWriter();
 		// defineEntityMethod.code = writer.generate().split("\n");
 		// this._entityDefineMethods.push(defineEntityMethod.name);
-		// this._class?.protectedSection?.methods?.push(defineEntityMethod);
+		// this._class.protectedSection.methodspush(defineEntityMethod);
 	};
 
 	public generate(): string {
@@ -131,9 +131,10 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 	 */
 	protected _createEntity(entityName: string, entityReturnType: string){
 		let methodName = `${entityName}_create_entity`;
-		this._class?.protectedSection?.methods?.push({
+		this._class.protectedSection ??= { type: ABAPClassSectionType.PROTECTED };
+		this._class.protectedSection.methods ??= {};
+		this._class.protectedSection.methods[methodName] = {
 			type: ABAPMethodType.MEMBER,
-			name: methodName,
 			importing: [
 				{ name: "entity_name", referenceType: ABAPParameterReferenceType.TYPE, type: "string" },
 				{ name: "entity_set_name", referenceType: ABAPParameterReferenceType.TYPE, type: "string" },
@@ -154,7 +155,7 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 				"\t\ttextit = /iwbep/cx_mgw_not_impl_exc=>method_not_implemented",
 				`\t\tmethod = ${methodName}.`
 			]
-		});
+		};
 	}
 
 	/**
@@ -164,9 +165,10 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 	 */
 	protected _deleteEntity(entityName: string, entityReturnType: string){
 		let methodName = `${entityName}_delete_entity`;
-		this._class?.protectedSection?.methods?.push({
+		this._class.protectedSection ??= { type: ABAPClassSectionType.PROTECTED };
+		this._class.protectedSection.methods ??= {};
+		this._class.protectedSection.methods[methodName] = {
 			type: ABAPMethodType.MEMBER,
-			name: methodName,
 			importing: [
 				{ name: "entity_name", referenceType: ABAPParameterReferenceType.TYPE, type: "string" },
 				{ name: "entity_set_name", referenceType: ABAPParameterReferenceType.TYPE, type: "string" },
@@ -186,7 +188,7 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 				"\t\ttextit = /iwbep/cx_mgw_not_impl_exc=>method_not_implemented",
 				`\t\tmethod = ${methodName}.`
 			]
-		});
+		};
 	}
 
 	/**
@@ -196,9 +198,10 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 	 */
 	protected _getEntity(entityName: string, entityReturnType: string){
 		let methodName = `${entityName}_get_entity`;
-		this._class?.protectedSection?.methods?.push({
+		this._class.protectedSection ??= { type: ABAPClassSectionType.PROTECTED };
+		this._class.protectedSection.methods ??= {};
+		this._class.protectedSection.methods[methodName] ={
 			type: ABAPMethodType.MEMBER,
-			name: methodName,
 			importing: [
 				{ name: "entity_name", referenceType: ABAPParameterReferenceType.TYPE, type: "string" },
 				{ name: "entity_set_name", referenceType: ABAPParameterReferenceType.TYPE, type: "string" },
@@ -222,7 +225,7 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 				"\t\ttextit = /iwbep/cx_mgw_not_impl_exc=>method_not_implemented",
 				`\t\tmethod = ${methodName}.`
 			]
-		});
+		};
 	}
 
 	/**
@@ -230,9 +233,10 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 	 */
 	protected _getEntitySet(entityName: string, entityReturnType: string){
 		let methodName = `${entityName}_get_entity_set`;
-		this._class?.protectedSection?.methods?.push({
+		this._class.protectedSection ??= { type: ABAPClassSectionType.PROTECTED };
+		this._class.protectedSection.methods ??= {};
+		this._class.protectedSection.methods[methodName] = {
 			type: ABAPMethodType.MEMBER,
-			name: methodName,
 			importing: [
 				{ name: "entity_name", referenceType: ABAPParameterReferenceType.TYPE, type: "string" },
 				{ name: "entity_set_name", referenceType: ABAPParameterReferenceType.TYPE, type: "string" },
@@ -260,7 +264,7 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 				"\t\ttextit = /iwbep/cx_mgw_not_impl_exc=>method_not_implemented",
 				`\t\tmethod = ${methodName}.`
 			]
-		});
+		};
 	}
 
 	/**
@@ -270,9 +274,10 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 	 */
 	protected _updateEntity(entityName: string, entityReturnType: string){
 		let methodName = `${entityName}_update_entity`;
-		this._class?.protectedSection?.methods?.push({
+		this._class.protectedSection ??= { type: ABAPClassSectionType.PROTECTED };
+		this._class.protectedSection.methods ??= {};
+		this._class.protectedSection.methods[`${entityName}_update_entity`] = {
 			type: ABAPMethodType.MEMBER,
-			name: `${entityName}_update_entity`,
 			importing: [
 				{ name: "entity_name", referenceType: ABAPParameterReferenceType.TYPE, type: "string" },
 				{ name: "entity_set_name", referenceType: ABAPParameterReferenceType.TYPE, type: "string" },
@@ -293,7 +298,7 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 				"\t\ttextit = /iwbep/cx_mgw_not_impl_exc=>method_not_implemented",
 				`\t\tmethod = ${methodName}.`
 			]
-		});
+		};
 	}
 
 	protected _handleGetEntitySet(){
@@ -361,12 +366,13 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		writer.decreaseIndent().writeLine("ENDCASE.");
 
 		let code = writer.generate().split('\n');
-		this._class?.publicSection?.methods?.push({
+		this._class.publicSection ??= { type: ABAPClassSectionType.PUBLIC };
+		this._class.publicSection.methods ??= {};
+		this._class.publicSection.methods["/iwbep/if_mgw_appl_srv_runtime~get_entity_set"] = {
 			type: ABAPMethodType.MEMBER,
-			name: "/iwbep/if_mgw_appl_srv_runtime~get_entity_set",
 			isRedefinition: true,
 			code: code
-		});
+		};
 	}
 
 	protected _handleGetEntity(){
@@ -430,12 +436,13 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		writer.decreaseIndent().writeLine("ENDCASE.");
 
 		let code = writer.generate().split('\n');
-		this._class?.publicSection?.methods?.push({
+		this._class.publicSection ??= { type: ABAPClassSectionType.PUBLIC };
+		this._class.publicSection.methods ??= {};
+		this._class.publicSection.methods["/iwbep/if_mgw_appl_srv_runtime~get_entity"] = {
 			type: ABAPMethodType.MEMBER,
-			name: "/iwbep/if_mgw_appl_srv_runtime~get_entity",
 			isRedefinition: true,
 			code: code
-		});
+		};
 	}
 
 	protected _handleUpdateEntity(){
@@ -495,12 +502,13 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		writer.decreaseIndent().writeLine("ENDCASE.");
 
 		let code = writer.generate().split('\n');
-		this._class?.publicSection?.methods?.push({
+		this._class.publicSection ??= { type: ABAPClassSectionType.PUBLIC };
+		this._class.publicSection.methods ??= {};
+		this._class.publicSection.methods["/iwbep/if_mgw_appl_srv_runtime~update_entity"] = {
 			type: ABAPMethodType.MEMBER,
-			name: "/iwbep/if_mgw_appl_srv_runtime~update_entity",
 			isRedefinition: true,
 			code: code
-		});
+		};
 	}
 
 	protected _handleCreateEntity(){
@@ -548,12 +556,13 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		writer.decreaseIndent().writeLine("ENDCASE.");
 
 		let code = writer.generate().split('\n');
-		this._class?.publicSection?.methods?.push({
+		this._class.publicSection ??= { type: ABAPClassSectionType.PUBLIC };
+		this._class.publicSection.methods ??= {};
+		this._class.publicSection.methods["/iwbep/if_mgw_appl_srv_runtime~create_entity"] = {
 			type: ABAPMethodType.MEMBER,
-			name: "/iwbep/if_mgw_appl_srv_runtime~create_entity",
 			isRedefinition: true,
 			code: code
-		});
+		};
 	}
 
 	protected _handleDeleteEntity(){
@@ -589,12 +598,13 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		writer.decreaseIndent().writeLine("ENDCASE.");
 
 		let code = writer.generate().split('\n');
-		this._class?.publicSection?.methods?.push({
+		this._class.publicSection ??= { type: ABAPClassSectionType.PUBLIC };
+		this._class.publicSection.methods ??= {};
+		this._class.publicSection.methods["/iwbep/if_mgw_appl_srv_runtime~delete_entity"] = {
 			type: ABAPMethodType.MEMBER,
-			name: "/iwbep/if_mgw_appl_srv_runtime~delete_entity",
 			isRedefinition: true,
 			code: code
-		});
+		};
 	}
 
 	protected _handleActions(actions?: any){
@@ -610,9 +620,10 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 
 			let actionName = getActionName(action, actionKey).replace(/\./g, '_');
 
-			this._class?.protectedSection?.methods?.push({
+			this._class.protectedSection ??= { type: ABAPClassSectionType.PROTECTED };
+			this._class.protectedSection.methods ??= {};
+			this._class.protectedSection.methods[`execute_${actionName}`] = {
 				type: ABAPMethodType.MEMBER,
-				name: `execute_${actionName}`,
 				importing: [
 					{ name: "action_name", 	referenceType: ABAPParameterReferenceType.TYPE, type: "string", isOptional: true },
 					{ name: "parameters", 	referenceType: ABAPParameterReferenceType.TYPE, type: "/iwbep/it_mgw_name_value_pair", isOptional: true },
@@ -627,7 +638,7 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 					"\t\ttextit = /iwbep/cx_mgw_not_impl_exc=>method_not_implemented",
 					`\t\tmethod = 'execute_${actionName}'.`
 				]
-			});
+			};
 		});
 
 		let writer = new CodeWriter();
@@ -662,11 +673,12 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		writer.decreaseIndent().writeLine("ENDCASE.");
 
 		let code = writer.generate().split('\n');
-		this._class?.publicSection?.methods?.push({
+		this._class.publicSection ??= { type: ABAPClassSectionType.PUBLIC };
+		this._class.publicSection.methods ??= {};
+		this._class.publicSection.methods[`/iwbep/if_mgw_appl_srv_runtime~execute_action`] = {
 			type: ABAPMethodType.MEMBER,
-			name: "/iwbep/if_mgw_appl_srv_runtime~execute_action",
 			isRedefinition: true,
 			code: code
-		});
+		};
 	}
 }
