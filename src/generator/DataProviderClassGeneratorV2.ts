@@ -112,11 +112,11 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 			this.addEntity(entity);
 		}
 
-		this._handleGetEntitySet();
-		this._handleGetEntity();
-		this._handleUpdateEntity();
-		this._handleCreateEntity();
-		this._handleDeleteEntity();
+		this._handleGetEntitySet(service);
+		this._handleGetEntity(service);
+		this._handleUpdateEntity(service);
+		this._handleCreateEntity(service);
+		this._handleDeleteEntity(service);
 
 		this._handleActions(actions);
 
@@ -301,7 +301,7 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		};
 	}
 
-	protected _handleGetEntitySet(){
+	protected _handleGetEntitySet(service: any){
 		let writer = new CodeWriter();
 
 		writer.writeLine(`" TODO: Write Type MPC Type Def`).writeLine();
@@ -310,8 +310,8 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 
 		writer.writeLine("CASE entityset_name.").increaseIndent();
 		
-		for(let entity of [{}]){
-			let entityName = "TEST";
+		for(let entity of service?.entities ?? []){
+			let entityName = ABAPUtils.getABAPName(entity);
 			writer.writeLine(`WHEN '${entityName}'.`).increaseIndent();
 			writer.writeLine(`me->${entityName}_get_entityset(`).increaseIndent();
 			writer.writeLine("EXPORTING").increaseIndent();
@@ -375,7 +375,7 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		};
 	}
 
-	protected _handleGetEntity(){
+	protected _handleGetEntity(service: any){
 		let writer = new CodeWriter();
 
 		writer.writeLine(`" TODO: Write Type MPC Type Def`).writeLine();
@@ -384,8 +384,8 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 
 		writer.writeLine("CASE entityset_name.").increaseIndent();
 		
-		for(let entity of [{}]){
-			let entityName = "TEST";
+		for(let entity of service?.entities ?? []){
+			let entityName = ABAPUtils.getABAPName(entity);
 			writer.writeLine(`WHEN '${entityName}'.`).increaseIndent();
 			writer.writeLine(`me->${entityName}_get_entity(`).increaseIndent();
 			writer.writeLine("EXPORTING").increaseIndent();
@@ -445,7 +445,7 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		};
 	}
 
-	protected _handleUpdateEntity(){
+	protected _handleUpdateEntity(service: any){
 		let writer = new CodeWriter();
 		writer.writeLine(`" TODO: Write Type MPC Type Def`).writeLine();
 		writer.writeLine("DATA(entityset_name) = io_tech_request_context->get_entity_set_name( ).");
@@ -453,8 +453,8 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 
 		writer.writeLine("CASE entityset_name.").increaseIndent();
 		
-		for(let entity of [{}]){
-			let entityName = "TEST";
+		for(let entity of service?.entities ?? []){
+			let entityName = ABAPUtils.getABAPName(entity);
 			writer.writeLine(`WHEN '${entityName}'.`).increaseIndent();
 			writer.writeLine(`data(${entityName}_update_entity) = me->${entityName}_update_entity(`).increaseIndent();
 			writer.writeLine(`entity_name = iv_entity_name`);
@@ -511,7 +511,7 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		};
 	}
 
-	protected _handleCreateEntity(){
+	protected _handleCreateEntity(service: any){
 
 		let writer = new CodeWriter();
 		writer.writeLine(`" TODO: Write Type MPC Type Def`).writeLine();
@@ -519,8 +519,8 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 
 		writer.writeLine("CASE entityset_name.").increaseIndent();
 		
-		for(let entity of [{}]){
-			let entityName = "TEST";
+		for(let entity of service?.entities ?? []){
+			let entityName = ABAPUtils.getABAPName(entity);
 			writer.writeLine(`WHEN '${entityName}'.`).increaseIndent();
 			writer.writeLine(`data(${entityName}_create_entity) = me->${entityName}_create_entity(`).increaseIndent();
 			writer.writeLine(`entity_name = iv_entity_name`);
@@ -565,15 +565,15 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		};
 	}
 
-	protected _handleDeleteEntity(){
+	protected _handleDeleteEntity(service: any){
 		let writer = new CodeWriter();
 		writer.writeLine(`" TODO: Write Type MPC Type Def`).writeLine();
 		writer.writeLine("DATA(entityset_name) = io_tech_request_context->get_entity_set_name( ).");
 
 		writer.writeLine("CASE entityset_name.").increaseIndent();
 		
-		for(let entity of [{}]){
-			let entityName = "TEST";
+		for(let entity of service?.entities ?? []){
+			let entityName = ABAPUtils.getABAPName(entity);
 			writer.writeLine(`WHEN '${entityName}'.`).increaseIndent();
 			writer.writeLine(`me->${entityName}_delete_entity(`).increaseIndent();
 			writer.writeLine(`entity_name = iv_entity_name`);
