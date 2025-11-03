@@ -6,6 +6,12 @@ import { Primitive as CDSPrimitive } from "../types/cds";
 import { Primitive as EDMPrimative } from "../types/edm";
 
 export class CDS {
+
+	/**
+	 * Converts from CDS types to ABAP Primative Type
+	 * @param  {CDSPrimitive}  type CDS Primative
+	 * @return {ABAPPrimative}      ABAP Primative
+	 */
 	static cds2abap(type: CDSPrimitive): ABAPPrimative | null {
 		let abapType: ABAPPrimative | null = null;
 		switch(type){
@@ -60,6 +66,11 @@ export class CDS {
 		return abapType;
 	}
 
+	/**
+	 * Converts CDS Primatives to EDM (OData) Primatives
+	 * @param  {CDSPrimitive} type CDS Primative
+	 * @return {EDMPrimative}      EDM (OData Primative)
+	 */
 	static cds2edm(type: CDSPrimitive): EDMPrimative | null {
 		let edmType: EDMPrimative | null = null;
 		switch(type){

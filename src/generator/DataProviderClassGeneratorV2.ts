@@ -54,16 +54,28 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		});
 	}
 
+	/**
+	 * Set Compiler Info
+	 * @param {CompilerInfo} compilerInfo Compiler Info
+	 */
 	public setCompilerInfo(compilerInfo: CompilerInfo): void {
 		this._compilerInfo = compilerInfo;
 	}
 
+	/**
+	 * Get Class File Name
+	 * @return {string} Filename of the class
+	 */
 	public getFileName(): string { 
 		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
 		const service = this._compilerInfo?.csn.services[namespace];
 		return `ZCL_${ABAPUtils.getABAPName(service)}_DPC.abap`;
 	}
 
+	/**
+	 * Process an Entity
+	 * @param {entity} entity Entity to process and write.
+	 */
 	public addEntity(entity: entity): void {
 		let entityName = ABAPUtils.getABAPName(entity);
 
@@ -87,6 +99,10 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		// this._class.protectedSection.methodspush(defineEntityMethod);
 	};
 
+	/**
+	 * Generate
+	 * @return {string} ABAP Class
+	 */
 	public generate(): string {
 		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
 		const service = this._compilerInfo?.csn.services[namespace];
@@ -301,6 +317,10 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		};
 	}
 
+	/**
+	 * Handle Get Entity Set for the service
+	 * @param {csn.Service} service CSN Service
+	 */
 	protected _handleGetEntitySet(service: any){
 		let writer = new CodeWriter();
 
@@ -375,6 +395,11 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		};
 	}
 
+
+	/**
+	 * Handles Get Entity
+	 * @param {csn.Service} service Service
+	 */
 	protected _handleGetEntity(service: any){
 		let writer = new CodeWriter();
 
@@ -445,6 +470,11 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		};
 	}
 
+
+	/**
+	 * Handle Update Entity
+	 * @param {csn.Service} service CSN Service
+	 */
 	protected _handleUpdateEntity(service: any){
 		let writer = new CodeWriter();
 		writer.writeLine(`" TODO: Write Type MPC Type Def`).writeLine();
@@ -511,6 +541,10 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		};
 	}
 
+	/**
+	 * Handle Create Entity
+	 * @param {csn.Service} service CSN Service
+	 */
 	protected _handleCreateEntity(service: any){
 
 		let writer = new CodeWriter();
@@ -565,6 +599,10 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		};
 	}
 
+	/**
+	 * Handle Delete Dentity
+	 * @param {csn.Service} service CSN Service
+	 */
 	protected _handleDeleteEntity(service: any){
 		let writer = new CodeWriter();
 		writer.writeLine(`" TODO: Write Type MPC Type Def`).writeLine();
@@ -607,6 +645,10 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 		};
 	}
 
+	/**
+	 * Handle Entity/Service Actions/Functions
+	 * @param {csn.Action} actions Actions to process
+	 */
 	protected _handleActions(actions?: any){
 		let getActionName = (action: any, actionKey: string): string => {
 			if(action?.["@segw.name"]){

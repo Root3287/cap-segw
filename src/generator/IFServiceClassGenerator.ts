@@ -3,7 +3,20 @@ import { CompilerInfo } from "../types/frontend";
 import IFCodeGenerator from "./IFCodeGenerator";
 
 export default interface IFServiceClassGenerator extends IFCodeGenerator {
+	/**
+	 * Set Compiler Information from the front end
+	 * @param {CompilerInfo} compilerInfo Frontend compiler information
+	 */
 	setCompilerInfo(compilerInfo: CompilerInfo): void;
+	
+	/**
+	 * Get Filename
+	 */
 	getFileName(): void;
+
+	/**
+	 * Add an entity to be process
+	 * @param {entity} entity Entity to be processed
+	 */
 	addEntity(entity: entity): void;
 };

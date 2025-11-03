@@ -52,16 +52,28 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 	
 	}
 
+	/**
+	 * Set the Compiler information
+	 * @param {CompilerInfo} compilerInfo Compiler Information from the front end
+	 */
 	public setCompilerInfo(compilerInfo: CompilerInfo): void {
 		this._compilerInfo = compilerInfo;
 	}
 
+	/**
+	 * Get File name of the class
+	 * @return {string} Class Filename
+	 */
 	public getFileName(): string {
 		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
 		const service = this._compilerInfo?.csn.services[namespace];
 		return `ZCL_${ABAPUtils.getABAPName(service)}_MPC.abap`;
 	}
 
+	/**
+	 * Add the entity to be processed
+	 * @param {entity} entity Entity to be proccessed
+	 */
 	public addEntity(entity: entity): void {
 		if((<any>entity)?.["@segw.ignore"]){
 			return;
@@ -203,6 +215,10 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		this._class.protectedSection.methods[methodName] = defineEntityMethod;
 	};
 
+	/**
+	 * Generate a MPC class
+	 * @return {string} ABAP Class
+	 */
 	public generate(): string {
 		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
 		const service = this._compilerInfo?.csn.services[namespace];
@@ -323,6 +339,10 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		}
 	}
 
+	/**
+	 * Get All Associations in the service
+	 * @param {csn.Service} service Service to process
+	 */
 	private _getAssociations(service: any) {
 		let isAssociation = (e: any) => e.type === CDSPrimitive.Composition || e.type === CDSPrimitive.Association;
 		let associations: any = [];
@@ -336,6 +356,10 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		return associations;
 	}
 
+	/**
+	 * Write an ABAP method to that makes Associations
+	 * @param {csn.Associations[]} associations Associations to write
+	 */
 	private _writeAssociations(associations: any[]): void {
 		let writer = new CodeWriter();
 		writer.writeLine(`DATA:`).increaseIndent();
@@ -442,6 +466,10 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		};
 	}
 
+	/**
+	 * Process Service Actions
+	 * @param {csn.Service} service Service to process actions
+	 */
 	private _processActions(service: any){
 		let actions = {};
 
@@ -458,6 +486,10 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		this._writeActions(actions)
 	}
 
+	/**
+	 * Write actions to the class
+	 * @param {csn.Actions} actions Actions to write out
+	 */
 	private _writeActions(actions: any): void {
 		let writer = new CodeWriter();
 

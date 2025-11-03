@@ -14,6 +14,11 @@ export default class CDSTypeConverter {
 		this._service = service;
 	}
 
+	/**
+	 * Creates a type alias
+	 * @param {string} name Name of the type alias
+	 * @param {string} type ABAP type to alias to
+	 */
 	private _createTypeAlias(name: string, type: string){
 		let typeName = `t_${name}`;
 		let typeExists = this._types?.find(s => ("name" in s && s?.name === typeName) || ("structure" in s && s?.structure?.name === typeName));
@@ -33,6 +38,11 @@ export default class CDSTypeConverter {
 		});
 	}
 
+	/**
+	 * Create Entity Type
+	 * @param {string} name   Name of entity
+	 * @param {csn.Entity}    entity Entity to put into an ABAP Structure
+	 */
 	private _createEntityType(name: string, entity: any): void {
 		let typeName = `t_${name}`;
 		let typeExists = this._types?.find(s => ("name" in s && s?.name === typeName) || ("structure" in s && s?.structure?.name === typeName));
@@ -121,6 +131,11 @@ export default class CDSTypeConverter {
 		});
 	}
 
+	/**
+	 * Create an Action Structure
+	 * @param {string} name   Name of Action Structure
+	 * @param {csn.Action}    action Action to write out
+	 */
 	private _createActionType(name: string, action: any){
 		let typeName = `t_${name}_input`;
 		let typeExists = this._types?.find(s => ("name" in s && s?.name === typeName) || ("structure" in s && s?.structure?.name === typeName));
@@ -199,6 +214,10 @@ export default class CDSTypeConverter {
 		this._types?.push(abapStructure);
 	}
 
+	/**
+	 * Get ABAP Types that got generated
+	 * @return {Array} ABAP Types
+	 */
 	public getABAPTypes(): Array<ABAP.Structure | ABAP.Parameter | ABAP.Table> {
 		this._types = [];
 		for(let action of this._service?.actions ?? []){
