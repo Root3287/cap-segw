@@ -10,6 +10,7 @@ export enum Primitive {
 	Date = 'edm.Date',
 	Time = 'edm.Time',
 	DateTime = 'edm.DateTime',
+	DateTimeOffset = 'edm.DateTimeOffset',
 	Timestamp = 'edm.Timestamp',
 	String = 'edm.String',
 	Binary = 'edm.Binary',

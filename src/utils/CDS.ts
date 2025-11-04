@@ -110,7 +110,7 @@ export class CDS {
 			case CDSPrimitive.DateTime:
 				edmType = EDMPrimative.DateTime;
 			case CDSPrimitive.Timestamp:
-				edmType = EDMPrimative.Timestamp;
+				edmType = EDMPrimative.DateTimeOffset;
 				break;
 			case CDSPrimitive.LargeString:
 			case CDSPrimitive.String:
