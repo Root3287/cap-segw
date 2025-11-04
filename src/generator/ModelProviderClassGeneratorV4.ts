@@ -91,40 +91,72 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 		let writer = new CodeWriter();
 		writer.writeLine("DATA:").increaseIndent();
 		writer.writeLine("entity_type TYPE REF TO /iwbep/if_v4_med_entity_type,");
-		writer.writeLine("property TYPE REF TO /iwbep/if_v4_med_prim_prop,");
-		writer.writeLine("entity_set TYPE REF TO /iwbep/if_v4_med_entity_set,");
+		writer.writeLine("primitive_properties TYPE /iwbep/if_v4_med_element=>ty_t_med_prim_property,");
+		writer.writeLine("primitive_property type ref to /iwbep/if_v4_med_prim_prop,");
+		writer.writeLine("complex_property type ref to /iwbep/if_v4_med_cplx_prop,");
 		writer.writeLine("nav_property TYPE REF TO /iwbep/if_v4_med_nav_prop,");
-		// TODO: Create Types
-		writer.writeLine(`referenced_entity TYPE ${this._class.name}~t_${entityName}`);
+		writer.writeLine("entity_set TYPE REF TO /iwbep/if_v4_med_entity_set,");
+		writer.writeLine(`referenced_entity TYPE ${this._class.name}=>t_${entityName}.`);
 		writer.decreaseIndent().writeLine().writeLine();
 
 		writer.writeLine(`" Create Entity Type`);
-		writer.writeLine("entity_type = io_model->create_entity_type_by_struct( ").increaseIndent();
-		writer.writeLine(`iv_entity_type_name = '${entityName}'`);
-		writer.writeLine(`is_structure = referenced_entity`);
-		writer.writeLine(`iv_add_conv_to_prim_props = abap_true`);
-		writer.writeLine(`iv_add_f4_help_to_prim_props = abap_true`);
-		writer.writeLine(`iv_gen_prim_props = abap_true`);
-		writer.decreaseIndent().writeLine(").").writeLine();
+		writer.writeLine(`entity_type = model->create_entity_type( '${entityName.toUpperCase()}' ).`);
+
+		// Doesn't Do Deep Reference
+		// writer.writeLine("entity_type = model->create_entity_type_by_struct( ").increaseIndent();
+		// writer.writeLine(`iv_entity_type_name = '${entityName.toUpperCase()}'`);
+		// writer.writeLine(`is_structure = referenced_entity`);
+		// writer.writeLine(`iv_add_conv_to_prim_props = abap_true`);
+		// writer.writeLine(`iv_add_f4_help_to_prim_props = abap_true`);
+		// writer.writeLine(`iv_gen_prim_props = abap_true`);
+		// writer.decreaseIndent().writeLine(").").writeLine();
 
 		writer.writeLine(`" Set External EDM name for entity type`);
 		writer.writeLine(`entity_type->set_edm_name( |${entityName}| ).`).writeLine();
 
-		writer.writeLine(`" Rename External EDM names so CamelCase notation is used`);
-		writer.writeLine(`entity_type->get_primative_properties( IMPORTING et_property = primative_properties ).`);
-		writer.writeLine(`LOOP AT primative_properties INTO DATA(primative_property).`).increaseIndent();
-		writer.writeLine(`primative_properties->set_edm_name( to_mixed( val = primative_property->get_internal_name( ) ) ).`).decreaseIndent();
-		writer.writeLine(`ENDLOOP.`).writeLine();
+		for(let element of entity?.elements ?? []){
+			let primitive = CDSUtils.cds2edm((<any>element.type));
+			let elementPrototype = Object.getPrototypeOf(element);
 
-		writer.writeLine(`" Set Key Fields`);
+			let elementName = ABAPUtils.getABAPName(element.name);
+			let elementNameInternal = ABAPUtils.getABAPName(element.name).toUpperCase();
 
-		writer.writeLine(`" Create Navigation Property`);
+			if(primitive || CDSUtils.cds2edm(elementPrototype.type)){
+				writer.writeLine(`primitive_property = entity_type->create_prim_property( '${elementNameInternal}' ).`);
+				writer.writeLine(`primitive_property->set_edm_name( '${elementName}' ).`);
+
+				let primitiveType = CDSUtils.cds2edm(elementPrototype.type) ?? primitive;
+
+				writer.writeLine(`primitive_property->set_edm_type( '${primitiveType?.substring(4)}' ).`);
+
+				if(element?.key)
+					writer.writeLine(`primitive_property->set_is_key( ).`);
+				if(!element?.key && !element?.notNull)
+					writer.writeLine(`primitive_property->set_is_nullable( ).`);
+				if(primitive !== "edm.Guid" && (<any>element)?.length)
+					writer.writeLine(`primitive_property->set_max_length( '${(<any>element).length}' ).`);
+			}else if(elementPrototype.kind === "type"){
+				// writer.writeLine(`complex_property = entity_type->create_complex_property( '${elementNameInternal}' ).`);
+				// writer.writeLine(`complex_property->set_complex_type( '' ).`);
+				// if(!element?.notNull)
+				// 	writer.writeLine(`complex_property->set_is_nullable( ).`);
+			}else if(elementPrototype.type === "Association" || elementPrototype.type === "Composition"){
+				// writer.writeLine(`nav_property = entity_type->create_navigation_property( '${elementNameInternal}' ).`);
+				// writer.writeLine(`nav_property->set_edm_name( '${elementName}' ).`);
+				// writer.writeLine(`nav_property->set_partner( iv_partner = '' iv_complex_property_path = '' ).`);
+				// writer.writeLine(`nav_property->set_target_entity_type_name( iv_entity_type_name = '' iv_service_ref_name = '' ).`);
+				// 1 - /iwbep/if_v4_med_element=>gcs_med_nav_multiplicity-to_one
+				// O - /iwbep/if_v4_med_element=>gcs_med_nav_multiplicity-to_one_optional
+				// N - /iwbep/if_v4_med_element=>gcs_med_nav_multiplicity-to_many_optional
+				// writer.writeLine(`nav_property->set_target_multiplicity( '1' ).`);
+				// writer.writeLine(`nav_property->add_referential_constraint( iv_source_property_path = '' iv_target_property_path = '' ).`);
+			}
+			writer.writeLine()
+		}
 
 		writer.writeLine(`" Create Entity Set`);
-		writer.writeLine(`entity_set = entity_type->create_entity_set( '${entityName}' ).`);
-		writer.writeLine(`entity_set->set_edm_name( ).`);
-
-		writer.writeLine(`" Add the binding of the navigation path`);
+		writer.writeLine(`entity_set = entity_type->create_entity_set( '${entityName.toUpperCase()}_SET' ).`);
+		// writer.writeLine(`entity_set->set_edm_name( ).`);
 		writer.writeLine();
 
 		defineEntityMethod.code = writer.generate().split("\n");
@@ -159,6 +191,7 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 			type: ABAPMethodType.MEMBER,
 			isRedefinition: true,
 			code: [
+				`io_model->set_schema_namespace( '${namespace}' ).`,
 				...this._entityDefineMethods.map((method) => `me->${method}( io_model ).`),
 				"me->define_actions( io_model )."
 			],
@@ -173,13 +206,14 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 
 		let writer = new CodeWriter();
 
+		writer.writeLine("data primitive type ref to /iwbep/if_v4_med_prim_type.");
 		writer.writeLine("data action type ref to /iwbep/if_v4_med_action.");
 		writer.writeLine("data action_import type ref to /iwbep/if_v4_med_action_imp.");
 		writer.writeLine("data action_parameter type ref to /iwbep/if_v4_med_act_param.");
 		writer.writeLine("data action_return type ref to /iwbep/if_v4_med_act_return.");
 		writer.writeLine();
 		writer.writeLine("data function type ref to /iwbep/if_v4_med_function.");
-		writer.writeLine("data function_import type ref to /iwbep/if_v4_med_function_imp.");
+		writer.writeLine("data function_import type ref to /iwbep/if_v4_med_func_imp.");
 		writer.writeLine("data function_parameter type ref to /iwbep/if_v4_med_func_param.");
 		writer.writeLine("data function_return type ref to /iwbep/if_v4_med_func_return.");
 		writer.writeLine();
@@ -200,8 +234,9 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 		this._class.protectedSection.methods[`define_actions`] = {
 			type: ABAPMethodType.MEMBER,
 			importing: [
-				{ name: "model", referenceType: ABAPParameterReferenceType.TYPE_REF, type: ""}
+				{ name: "model", referenceType: ABAPParameterReferenceType.TYPE_REF, type: "/iwbep/if_v4_med_model"}
 			],
+			raising: ["/iwbep/cx_gateway"],
 			code: code
 		}
 	}
@@ -214,8 +249,32 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 			return action.name;
 		}
 
+		// Functions must have a return type
+		if(action.kind === "function" && !action?.returns) LOG.warn(`Function ${action.name} must have a return type!`);
+
+		// Function Imports must have an entity set
+		if(action.kind === "function" && !action?.parent && Object.getPrototypeOf(action?.returns?.items ?? action?.returns)?.kind !== "entity" )
+			LOG.warn(`Function Import ${action.name} must be an entity!`);
+
+		// Neteeaver 7.50 Does not support Collection of Complex Types
+		if(action?.returns?.items && Object.getPrototypeOf(action?.returns?.items) === "type")
+			LOG.warn(`Collection of Complex Types are not supported in operation ${action.name}`);
+
+		// Netweaver 7.50 Only support returning Entity Types for bounded operations
+		if(action?.parent && action?.returns && Object.getPrototypeOf(action?.returns?.items ?? action?.returns)?.kind !== "entity")
+			LOG.warn(`Bounded Operations ${action.name} only support returning Entity Types`);
+
 		let actionName = ABAPUtils.getABAPName(getActionName(action));
-		let actionABAPName = ABAPUtils.getABAPName(getActionName(action)).replace(/\./g, '_');
+		let actionABAPName = ABAPUtils.getABAPName((<any>action)?.["@segw.abap.name"] ?? getActionName(action)).replace(/\./g, '_');
+
+		let primitivePrefix = "";
+		if(action?.kind === "function"){
+			primitivePrefix = "FUNC";
+		}
+		if(action?.kind === "action"){
+			primitivePrefix = "ACT";
+		}
+		primitivePrefix += `_${actionABAPName.toUpperCase()}_`;
 
 		// TODO: This could be re-written as the following ABAP
 		// try.
@@ -223,25 +282,36 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 		// catch /iwbep/cx_gateway.
 		// 	action = model->create_action( |${actionName}| ).
 		// endtry.
-		writer.writeLine(`${action.kind} = model->create_${action.kind}( |${actionName}| ).`);
+		writer.writeLine(`${action.kind} = model->create_${action.kind}( |${actionName.toUpperCase()}| ).`);
 		
 		if(!action?.parent){
-			writer.writeLine(`${action.kind}_import = ${action.kind}->create_${action.kind}_import( ).`);
+			writer.writeLine(`${action.kind}_import = ${action.kind}->create_${action.kind}_import( |${actionABAPName.toUpperCase()}| ).`);
+			writer.writeLine(`${action.kind}_import->set_edm_name( '${actionName}' ).`);
 		}else{
-			writer.writeLine(`${action.kind}_parameter = ${action.kind}->create_parameter( 'parent' ).`);
+			writer.writeLine(`${action.kind}_parameter = ${action.kind}->create_parameter( 'PARENT' ).`);
 			writer.writeLine(`${action.kind}_parameter->set_is_binding_parameter( ).`);
-			writer.writeLine(`${action.kind}_parameter->set_entity_type( '${ABAPUtils.getABAPName(action.parent)}' ).`);
+			writer.writeLine(`${action.kind}_parameter->set_entity_type( '${ABAPUtils.getABAPName(action.parent).toUpperCase()}' ).`);
 		}
 		writer.writeLine();
 
 		for(let param of (action?.params ?? [])) {
-			writer.writeLine(`${action.kind}_parameter = ${action.kind}->create_parameter( '${param.name}' ).`);
+
 			let paramPrototype = Object.getPrototypeOf(param);
-			let primative = CDSUtils.cds2edm(param.type);
-			if(primative){
-				writer.writeLine(`${action.kind}_parameter->set_primative_type( '${primative}' ).`);
+			let primitive = CDSUtils.cds2edm(param.type);
+
+			// Skip Complex type for now...
+			if(paramPrototype?.kind === "type") continue;
+
+			writer.writeLine(`${action.kind}_parameter = ${action.kind}->create_parameter( '${param.name.toUpperCase()}' ).`);
+			if(primitive){
+				let paramName = `${primitivePrefix}${ABAPUtils.getABAPName(param).toUpperCase()}`;
+				if(paramName.length > 30) LOG.warn(`${paramName} is too long consider shortening with "@segw.abap.name".`);
+
+				writer.writeLine(`primitive = model->create_primitive_type( |${paramName}| ).`);
+				writer.writeLine(`primitive->set_edm_type( '${primitive.substr(4)}' ).`);
+				writer.writeLine(`${action.kind}_parameter->set_primitive_type( '${paramName}' ).`);
 			}else if(paramPrototype?.kind === "entity"){
-				writer.writeLine(`${action.kind}_parameter->set_entity_type( '${ABAPUtils.getABAPName(paramPrototype)}' ).`);
+				writer.writeLine(`${action.kind}_parameter->set_entity_type( '${ABAPUtils.getABAPName(paramPrototype).toUpperCase()}' ).`);
 			}else if(paramPrototype?.kind === "type"){
 				// TODO: Flatten Complex Param
 			}
@@ -249,22 +319,36 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 
 		writer.writeLine();
 
+		// TODO: Collection of Complex Type are not supported
+
 		writer.writeLine(`${action.kind}_return = ${action.kind}->create_return( ).`);
 		if(!action?.returns){
 			writer.writeLine(`${action.kind}_return->set_is_nullable( ).`);
 		}else{
+			let returnEntity = Object.getPrototypeOf(("items" in action?.returns) ? action.returns.items : action.returns);
+			let returnPrimative = CDSUtils.cds2edm(action.returns.type);
+			let returnPrimativeName = `${primitivePrefix}R`;
+
 			if("items" in action?.returns){
 				writer.writeLine(`${action.kind}_return->set_is_collection( ).`);
 			}
 
-			let returnEntity = Object.getPrototypeOf(("items" in action?.returns) ? action.returns.items : action.returns);
-			let primative = CDSUtils.cds2edm(action.returns);
-			if(primative){
-				writer.writeLine(`${action.kind}_return->set_primative_type( '${primative}' ).`);
+			if(returnPrimative){
+				if(returnPrimativeName.length > 30) LOG.warn(`${returnPrimativeName} is too long consider shortening with "@segw.abap.name".`);
+				writer.writeLine(`primitive = model->create_primitive_type( |${returnPrimativeName}| ).`);
+				writer.writeLine(`primitive->set_edm_type( '${returnPrimative.substr(4)}' ).`);
+				writer.writeLine(`${action.kind}_return->set_primitive_type( '${returnPrimativeName}' ).`);
 			}else if(returnEntity?.kind === "type"){
-				writer.writeLine(`${action.kind}_return->set_complex_type( '${ABAPUtils.getABAPName(returnEntity)}' ).`);
+				if(returnPrimativeName.length > 30) LOG.warn(`${returnPrimativeName} is too long consider shortening with "@segw.abap.name".`);
+				writer.writeLine(`primitive = model->create_primitive_type( |${returnPrimativeName}| ).`);
+				writer.writeLine(`primitive->set_edm_type( 'String' ).`);
+				writer.writeLine(`${action.kind}_return->set_primitive_type( '${returnPrimativeName}' ).`);
+				// writer.writeLine(`${action.kind}_return->set_complex_type( '${ABAPUtils.getABAPName(returnEntity)}' ).`);
 			}else if(returnEntity?.kind === "entity"){
-				writer.writeLine(`${action.kind}_return->set_entity_type( '${ABAPUtils.getABAPName(returnEntity)}' ).`);
+				let returnEntityName = ABAPUtils.getABAPName(returnEntity).toUpperCase();
+				writer.writeLine(`${action.kind}_return->set_entity_type( '${returnEntityName}' ).`);
+				if(!action?.parent)
+					writer.writeLine(`${action.kind}_import->set_entity_set_name( '${returnEntityName}_SET' ).`);
 			}
 		}
 		writer.writeLine();
