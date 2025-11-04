@@ -4,6 +4,8 @@ import cds, { csn, Service, entity, struct, service } from "@sap/cds";
 import { CDS as CDSUtils } from "../utils/CDS";
 import { ABAP as ABAPUtils } from "../utils/ABAP";
 
+const LOG = cds.log("segw");
+
 export default class CDSTypeConverter {
 	private _service ?: any = null;
 	private _types: Array<ABAP.Structure | ABAP.Parameter | ABAP.Table>  = [];
@@ -33,6 +35,91 @@ export default class CDSTypeConverter {
 			structure: { 
 				name: `t${typeName}`, 
 				referenceType: ABAP.ParameterReferenceType.TYPE_STANDARD_TABLE, 
+				type: typeName
+			}
+		});
+	}
+
+	private _createComplexType(name: string, typeStruct: any): void {
+		let typeName = `t_${ABAPUtils.getABAPName(name)}`;
+		let typeExists = this._types?.find(s => {
+			 return ("name" in s && s?.name === typeName) ||
+					("structure" in s && s?.structure?.name === typeName)
+		});
+		if(typeExists) return;
+
+		let abapStructure: ABAP.Structure = { name: typeName, parameters: [] };
+
+		for(let property of typeStruct.elements){
+
+			// This is not an primative type, but one of the following
+			// TODO:  Process (<any>property)?.["@odata.type"] ??
+			let propertyType = <string>(CDSUtils.cds2abap((<CDS.Primitive>property.type)));
+
+			if((<any>property)?.["@segw.abap.type"]){
+				propertyType = (<any>property)?.["@segw.abap.type"];
+			}
+
+			// - Association
+			// - Composition
+			// - Complex Type
+			// - Type Alias
+			if(propertyType === null){
+
+				let propertyPrototype = Object.getPrototypeOf(property);
+				let propertyPrototypePrimative = CDSUtils.cds2abap(propertyPrototype.type);
+
+				let isAssociation = (
+					property?.type === CDS.Primitive.Association ||
+					propertyPrototype?.type === CDS.Primitive.Association
+				);
+				let isComposition = (
+					property?.type === CDS.Primitive.Composition ||
+					propertyPrototype?.type === CDS.Primitive.Composition
+				);
+				if(
+					!propertyType &&
+					property.kind === "element" &&
+					(isAssociation || isComposition)
+				){
+					continue;
+				}
+
+				// Check if type is actually in Prototype
+				// If it is it's a type alias
+				if(!propertyType && property.kind === "element" && propertyPrototypePrimative){
+					let pName = (property.type.split('.').length) ? property.type.split('.').at(-1) : property.type;
+					propertyType = `t_${ABAPUtils.getABAPName(pName)}`;
+					this._createTypeAlias(pName, propertyPrototypePrimative);
+				}
+
+				// Check if Complex Type
+				if(!propertyType && property.kind === "element" && propertyPrototype?.kind === "type"){
+					let pName = (property.type.split('.').length) ? property.type.split('.').at(-1) : property.type;
+					propertyType = `${ABAPUtils.getABAPName(pName)}`;
+					this._createComplexType(propertyType, property);
+				}
+			}
+
+			let abapProperty: ABAP.Parameter = {
+				name: property.name,
+				referenceType: ABAP.ParameterReferenceType.TYPE,
+				type: propertyType,
+			};
+
+			if(propertyType === ABAP.Primitive.DECIMAL){
+				abapProperty.length = 16;
+				abapProperty.decimal = 0;
+			}
+
+			abapStructure.parameters.push(abapProperty);
+		}
+
+		this._types?.push(abapStructure);
+		this._types?.push({
+			structure: {
+				name: `t${typeName}`,
+				referenceType: ABAP.ParameterReferenceType.TYPE_STANDARD_TABLE,
 				type: typeName
 			}
 		});
@@ -102,8 +189,8 @@ export default class CDSTypeConverter {
 				// Check if Complex Type
 				if(!propertyType && property.kind === "element" && propertyPrototype?.kind === "type"){
 					let pName = (property.type.split('.').length) ? property.type.split('.').at(-1) : property.type;
-					propertyType = `${ABAPUtils.getABAPName(pName)}`;
-					this._createEntityType(propertyType, property);
+					propertyType = `t_${ABAPUtils.getABAPName(pName)}`;
+					this._createComplexType(ABAPUtils.getABAPName(pName), property);
 				}
 			}
 
@@ -137,8 +224,16 @@ export default class CDSTypeConverter {
 	 * @param {csn.Action}    action Action to write out
 	 */
 	private _createActionType(name: string, action: any){
-		let typeName = `t_${name}_input`;
-		let typeExists = this._types?.find(s => ("name" in s && s?.name === typeName) || ("structure" in s && s?.structure?.name === typeName));
+		let typeName = `t_${ABAPUtils.getABAPName(name)}_input`;
+
+		if(typeName.length > 30){
+			LOG.warn(`${typeName} is too long. Consider shortening with '@segw.abap.name'`);
+		}
+
+		let typeExists = this._types?.find(s => {
+			 return ("name" in s && s?.name === typeName) ||
+					("structure" in s && s?.structure?.name === typeName)
+		});
 		if(typeExists) return;
 
 		if(!action?.params) return;
@@ -183,17 +278,17 @@ export default class CDSTypeConverter {
 
 				// Check if type is actually in Prototype
 				// If it is it's a type alias
-				if(!paramType && param.kind === "element" && paramPrototypePrimative){
+				if(!paramType && param.kind === "param" && paramPrototypePrimative){
 					let pName = (param.type.split('.').length) ? param.type.split('.').at(-1) : param.type;
 					paramType = `t_${ABAPUtils.getABAPName(pName)}`;
 					this._createTypeAlias(pName, paramPrototypePrimative);
 				}
 
 				// Check if Complex Type
-				if(!paramType && param.kind === "element" && paramPrototype?.kind === "type"){
+				if(!paramType && param.kind === "param" && paramPrototype?.kind === "type"){
 					let pName = (param.type.split('.').length) ? param.type.split('.').at(-1) : param.type;
-					paramType = `${ABAPUtils.getABAPName(pName)}`;
-					this._createActionType(paramType, param);
+					paramType = `t_${ABAPUtils.getABAPName(pName)}`;
+					this._createComplexType(ABAPUtils.getABAPName(pName), param);
 				}
 			}
 
@@ -221,13 +316,17 @@ export default class CDSTypeConverter {
 	public getABAPTypes(): Array<ABAP.Structure | ABAP.Parameter | ABAP.Table> {
 		this._types = [];
 		for(let action of this._service?.actions ?? []){
-			this._createActionType(`${ABAPUtils.getABAPName(action)}`, action);
+			let actionName = (<any>action)?.["@segw.abap.name"] ?? ABAPUtils.getABAPName(action);
+			this._createActionType(actionName, action);
 		}
 		for(let entity of this._service?.entities ?? []){
 			this._createEntityType(ABAPUtils.getABAPName(entity), entity);
 
 			for(let action of entity?.actions ?? []){
-				this._createActionType(`${ABAPUtils.getABAPName(entity)}_${ABAPUtils.getABAPName(action)}`, action);
+				let entityActionName = 	(<any>action)?.["@segw.abap.name"] ??
+										ABAPUtils.getABAPName(action) ??
+										`${ABAPUtils.getABAPName(entity)}.${ABAPUtils.getABAPName(action)}`;
+				this._createActionType(entityActionName, action);
 			}
 		}
 		return this._types;
