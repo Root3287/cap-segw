@@ -1,5 +1,5 @@
 export enum Primitive {
-	GUID = 'edm.GUID',
+	Guid = 'edm.Guid',
 	Boolean = 'edm.Boolean',
 	Byte = 'edm.Byte',
 	Int16 = 'edm.Int16',

@@ -75,7 +75,7 @@ export class CDS {
 		let edmType: EDMPrimative | null = null;
 		switch(type){
 			case CDSPrimitive.UUID:
-				edmType = EDMPrimative.GUID;
+				edmType = EDMPrimative.Guid;
 				break;
 			case CDSPrimitive.Boolean:
 				edmType = EDMPrimative.Boolean; // or FLAG
