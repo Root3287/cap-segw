@@ -115,43 +115,7 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 		writer.writeLine(`entity_type->set_edm_name( |${entityName}| ).`).writeLine();
 
 		for(let element of entity?.elements ?? []){
-			let primitive = CDSUtils.cds2edm((<any>element.type));
-			let elementPrototype = Object.getPrototypeOf(element);
-
-			let elementName = ABAPUtils.getABAPName(element.name);
-			let elementNameInternal = ABAPUtils.getABAPName(element.name).toUpperCase();
-
-			if(primitive || CDSUtils.cds2edm(elementPrototype.type)){
-				writer.writeLine(`primitive_property = entity_type->create_prim_property( '${elementNameInternal}' ).`);
-				writer.writeLine(`primitive_property->set_edm_name( '${elementName}' ).`);
-
-				let primitiveType = CDSUtils.cds2edm(elementPrototype.type) ?? primitive;
-
-				writer.writeLine(`primitive_property->set_edm_type( '${primitiveType?.substring(4)}' ).`);
-
-				if(element?.key)
-					writer.writeLine(`primitive_property->set_is_key( ).`);
-				if(!element?.key && !element?.notNull)
-					writer.writeLine(`primitive_property->set_is_nullable( ).`);
-				if(primitive !== "edm.Guid" && (<any>element)?.length)
-					writer.writeLine(`primitive_property->set_max_length( '${(<any>element).length}' ).`);
-			}else if(elementPrototype.kind === "type"){
-				// writer.writeLine(`complex_property = entity_type->create_complex_property( '${elementNameInternal}' ).`);
-				// writer.writeLine(`complex_property->set_complex_type( '' ).`);
-				// if(!element?.notNull)
-				// 	writer.writeLine(`complex_property->set_is_nullable( ).`);
-			}else if(elementPrototype.type === "Association" || elementPrototype.type === "Composition"){
-				// writer.writeLine(`nav_property = entity_type->create_navigation_property( '${elementNameInternal}' ).`);
-				// writer.writeLine(`nav_property->set_edm_name( '${elementName}' ).`);
-				// writer.writeLine(`nav_property->set_partner( iv_partner = '' iv_complex_property_path = '' ).`);
-				// writer.writeLine(`nav_property->set_target_entity_type_name( iv_entity_type_name = '' iv_service_ref_name = '' ).`);
-				// 1 - /iwbep/if_v4_med_element=>gcs_med_nav_multiplicity-to_one
-				// O - /iwbep/if_v4_med_element=>gcs_med_nav_multiplicity-to_one_optional
-				// N - /iwbep/if_v4_med_element=>gcs_med_nav_multiplicity-to_many_optional
-				// writer.writeLine(`nav_property->set_target_multiplicity( '1' ).`);
-				// writer.writeLine(`nav_property->add_referential_constraint( iv_source_property_path = '' iv_target_property_path = '' ).`);
-			}
-			writer.writeLine()
+			this._processElement(writer, element, "entity_type");
 		}
 
 		writer.writeLine(`" Create Entity Set`);
@@ -199,6 +163,61 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 
 		generator.setABAPClass(this._class);
 		return generator.generate();
+	}
+
+	private _processElement(writer: CodeWriter, element: any, varName: string){
+		let primitive = CDSUtils.cds2edm((<any>element.type));
+		let elementPrototype = Object.getPrototypeOf(element);
+
+		let elementName = ABAPUtils.getABAPName(element.name);
+		let elementNameInternal = ABAPUtils.getABAPName(element.name).toUpperCase();
+
+		if(primitive || CDSUtils.cds2edm(elementPrototype.type)){
+			writer.writeLine(`primitive_property = ${varName}->create_prim_property( '${elementNameInternal}' ).`);
+			writer.writeLine(`primitive_property->set_edm_name( '${elementName}' ).`);
+
+			let primitiveType = CDSUtils.cds2edm(elementPrototype.type) ?? primitive;
+
+			writer.writeLine(`primitive_property->set_edm_type( '${primitiveType?.substring(4)}' ).`);
+
+			if(element?.key)
+				writer.writeLine(`primitive_property->set_is_key( ).`);
+			if(!element?.key && !element?.notNull)
+				writer.writeLine(`primitive_property->set_is_nullable( ).`);
+			if(primitive !== "edm.Guid" && (<any>element)?.length)
+				writer.writeLine(`primitive_property->set_max_length( '${(<any>element).length}' ).`);
+		}else if(
+			(element.type === "cds.Composition" || element.type === "cds.Association") ||
+			(elementPrototype.type === "cds.Composition" || elementPrototype.type === "cds.Association")
+		){
+			writer.writeLine(`nav_property = ${varName}->create_navigation_property( '${elementNameInternal}' ).`);
+			writer.writeLine(`nav_property->set_edm_name( '${elementName}' ).`);
+			// writer.writeLine(`nav_property->set_partner( iv_partner = '' iv_complex_property_path = '' ).`);
+			// writer.writeLine(`nav_property->set_target_entity_type_name( iv_entity_type_name = '' iv_service_ref_name = '' ).`);
+			// 1 - /iwbep/if_v4_med_element=>gcs_med_nav_multiplicity-to_one
+			// O - /iwbep/if_v4_med_element=>gcs_med_nav_multiplicity-to_one_optional
+			// N - /iwbep/if_v4_med_element=>gcs_med_nav_multiplicity-to_many_optional
+			let multiplicity = (element?.is2many) ? 'N' : 'O';
+			if(element?.["notNull"] && multiplicity === 'O') multiplicity = '1';
+			writer.writeLine(`nav_property->set_target_multiplicity( '${multiplicity}' ).`);
+			// writer.writeLine(`nav_property->add_referential_constraint( iv_source_property_path = '' iv_target_property_path = '' ).`);
+		}else if(
+			(elementPrototype.kind === "type" ) &&
+			!(
+				element.type === "cds.Composition" ||
+				element.type === "cds.Association" ||
+				elementPrototype.type === "cds.Composition" ||
+				elementPrototype.type === "cds.Association"
+			)
+		) {
+			this._complexTypes[ABAPUtils.getABAPName(elementPrototype).toUpperCase()] ??= elementPrototype;
+			writer.writeLine(`complex_property = ${varName}->create_complex_property( '${elementNameInternal}' ).`);
+			writer.writeLine(`complex_property->set_edm_name( '${elementName}' ).`);
+			writer.writeLine(`complex_property->set_complex_type( '${ABAPUtils.getABAPName(elementPrototype).toUpperCase()}' ).`);
+			if(!element?.notNull)
+				writer.writeLine(`complex_property->set_is_nullable( ).`);
+		}
+		writer.writeLine()
 	}
 
 	private _processActions(service: any){
