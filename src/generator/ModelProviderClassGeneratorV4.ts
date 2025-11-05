@@ -39,7 +39,7 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 	};
 
 	private _entityDefineMethods: string[] = [];
-
+	private _complexTypes: Record<string, any> = {};
 	private _compilerInfo?: CompilerInfo;
 
 	public constructor(){
@@ -145,6 +145,7 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 			this.addEntity(entity);
 		}
 
+		this._processComplexTypes(service);
 		this._processActions(service);
 
 		// let associations = this._getAssociations(service);
@@ -156,6 +157,7 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 			isRedefinition: true,
 			code: [
 				`io_model->set_schema_namespace( '${namespace}' ).`,
+				"me->define_complex( io_model ).",
 				...this._entityDefineMethods.map((method) => `me->${method}( io_model ).`),
 				"me->define_actions( io_model )."
 			],
@@ -163,6 +165,42 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 
 		generator.setABAPClass(this._class);
 		return generator.generate();
+	}
+
+	private _processComplexTypes(service: any){
+		let writer = new CodeWriter();
+
+		writer.writeLine("DATA:").increaseIndent();
+		writer.writeLine("complex_type TYPE REF TO /iwbep/if_v4_med_cplx_type,");
+		writer.writeLine("primitive_properties TYPE /iwbep/if_v4_med_element=>ty_t_med_prim_property,");
+		writer.writeLine("primitive_property type ref to /iwbep/if_v4_med_prim_prop,");
+		writer.writeLine("complex_property type ref to /iwbep/if_v4_med_cplx_prop,");
+		writer.writeLine("nav_property TYPE REF TO /iwbep/if_v4_med_nav_prop.");
+		writer.decreaseIndent().writeLine().writeLine();
+
+		writer.writeLine();
+
+		for(let complexTypeKey in this._complexTypes){
+			let complexType = this._complexTypes[complexTypeKey];
+
+			writer.writeLine(`complex_type = model->create_complex_type( '${complexTypeKey}' ).`);
+
+			for(let element of complexType.elements){
+				this._processElement(writer, element, "complex_type");
+			}
+		}
+
+		let code = writer.generate().split('\n');
+		this._class.protectedSection ??= { type: ABAPClassSectionType.PRIVATE };
+		this._class.protectedSection.methods ??= {};
+		this._class.protectedSection.methods[`define_complex`] = {
+			type: ABAPMethodType.MEMBER,
+			importing: [
+				{ name: "model", referenceType: ABAPParameterReferenceType.TYPE_REF, type: "/iwbep/if_v4_med_model"}
+			],
+			raising: ["/iwbep/cx_gateway"],
+			code: code
+		}
 	}
 
 	private _processElement(writer: CodeWriter, element: any, varName: string){
