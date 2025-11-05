@@ -3,8 +3,12 @@ using { Address, Location, Customer, Reservation } from '../db/Hotel.cds';
 @segw.name: 'ZHOTEL'
 service Hotel {
 	entity Locations as projection on Location actions {
-		function getAverageRating() returns Decimal;
+		// function getAverageRating() returns Decimal;
+
+		@segw.abap.name: 'pend_cust_day'
 		function getPendingCustomersForDay(day: Date) returns array of Customers;
+
+		@segw.abap.name: 'pend_resv_day'
 		function getPendingReservationForDay(day: Date) returns array of Reservations;
 		function getReservations() returns array of Reservations;
 	};

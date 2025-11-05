@@ -10,7 +10,7 @@ type Address {
 	postal: String;
 
 	@segw.association.ignore
-	country: Country;
+	country: Country not null;
 }
 
 entity Location : cuid, managed {
