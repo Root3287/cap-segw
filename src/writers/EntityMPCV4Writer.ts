@@ -3,24 +3,71 @@ import IFCodeGenerator from "../generator/IFCodeGenerator";
 
 import { ABAP as ABAPUtils } from "../utils/ABAP";
 import { CDS as CDSUtils } from "../utils/CDS";
+import { Primitive as EDMPrimitive } from "../types/edm";
 
-import { entity } from "@sap/cds";
+import cds, { entity } from "@sap/cds";
+
+type Entity = {
+	csn: entity,
+	csdl: any
+};
+
+const LOG = cds.log("segw");
 
 export default class EntityMPCV4Writer implements IFCodeGenerator {
 	
-	private _entity?: entity;
+	private _entity?: Entity;
 	private _className: string = "";
 	private _writer: CodeWriter = new CodeWriter();
 
-	public setEntity(entity: entity){
-		this._entity = entity;
+	public setEntity(csnEntity: entity, csdlEntity: any){
+		this._entity = { csn: csnEntity, csdl: csdlEntity };
 	}
 
 	public setClassName(className: string){
 		this._className = className;
 	}
 
-	private _processElement(element: any, varName: string): void {
+	private _writeElements(){
+		if((<any>this._entity?.csn)?.["@segw.expand"]){
+			LOG.warn("@segw.expand is experimental!");
+			for(let element of this._entity?.csn?.elements ?? []){
+				this._processElement(element);
+			}
+			return;
+		}
+
+		let copyCDS2CSDL = (elementName: string, cds: any) =>{
+			if(!this._entity?.csdl?.[elementName]) return;
+			Object.assign(this._entity.csdl[elementName], cds);
+		}
+
+		// Copy over all the attributes over to CSDL.
+		// Process Elements that is marked as expanded
+		let processedExpandedNames: string[] = [];
+		for(let [elementName, element] of Object.entries((<any>this._entity?.csn.elements))){
+			if("elements" in (<any>element)){
+				// This could be an flattend type
+				Object.entries((<any>element)?.elements ?? {})
+					  .map(([propName, property]) => [`${elementName}_${propName}`, property])
+					  .forEach(([propName, property]) => copyCDS2CSDL((<any>propName), property) );
+			}else{
+				copyCDS2CSDL(elementName, element);
+			}
+			if(!(<any>element)?.["@segw.expand"]) continue;
+			LOG.warn("@segw.expand is experimental!");
+			processedExpandedNames.push(elementName);
+			this._processElement(element);
+		}
+
+		for(let [elementName, element] of Object.entries(this._entity?.csdl) ?? []){
+			if(elementName.startsWith("$") || elementName.startsWith("@")) continue;
+			if(processedExpandedNames.some((e) => elementName.startsWith(`${e}_`))) continue;
+			this._processCSDLElement(elementName, element)
+		}
+	}
+
+	private _processElement(element: any): void {
 		let primitive = CDSUtils.cds2edm((<any>element.type));
 		let elementPrototype = Object.getPrototypeOf(element);
 
@@ -28,7 +75,7 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 		let elementNameInternal = ABAPUtils.getABAPName(element.name).toUpperCase();
 
 		if(primitive || CDSUtils.cds2edm(elementPrototype.type)){
-			this._writer.writeLine(`primitive_property = ${varName}->create_prim_property( '${elementNameInternal}' ).`);
+			this._writer.writeLine(`primitive_property = entity_type->create_prim_property( '${elementNameInternal}' ).`);
 			this._writer.writeLine(`primitive_property->set_edm_name( '${elementName}' ).`);
 
 			let primitiveType = CDSUtils.cds2edm(elementPrototype.type) ?? primitive;
@@ -45,7 +92,7 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 			(element.type === "cds.Composition" || element.type === "cds.Association") ||
 			(elementPrototype.type === "cds.Composition" || elementPrototype.type === "cds.Association")
 		){
-			this._writer.writeLine(`nav_property = ${varName}->create_navigation_property( '${elementNameInternal}' ).`);
+			this._writer.writeLine(`nav_property = entity_type->create_navigation_property( '${elementNameInternal}' ).`);
 			this._writer.writeLine(`nav_property->set_edm_name( '${elementName}' ).`);
 			// this._writer.writeLine(`nav_property->set_partner( iv_partner = '' iv_complex_property_path = '' ).`);
 			// this._writer.writeLine(`nav_property->set_target_entity_type_name( iv_entity_type_name = '' iv_service_ref_name = '' ).`);
@@ -65,7 +112,7 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 				elementPrototype.type === "cds.Association"
 			)
 		) {
-			this._writer.writeLine(`complex_property = ${varName}->create_complex_property( '${elementNameInternal}' ).`);
+			this._writer.writeLine(`complex_property = entity_type->create_complex_property( '${elementNameInternal}' ).`);
 			this._writer.writeLine(`complex_property->set_edm_name( '${elementName}' ).`);
 			this._writer.writeLine(`complex_property->set_complex_type( '${ABAPUtils.getABAPName(elementPrototype).toUpperCase()}' ).`);
 			if(!element?.notNull)
@@ -74,9 +121,78 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 		this._writer.writeLine()
 	}
 
+	private _processCSDLElement(elementName: string, element: any){
+		if(element?.["$Kind"] === "NavigationProperty"){
+			this._writeCSDLNavProperty(elementName, element);
+			return;
+		}
+
+		let kind = element["$Kind"] ?? EDMPrimitive.String;
+
+		let internalName = element?.["@segw.abap.name"] ?? ABAPUtils.getABAPName(element) ?? ABAPUtils.getABAPName(elementName);
+		
+		if(internalName.length > 30) LOG.warn(`Internal Name ${internalName} is too long. Consider shortening it with '@segw.abap.name'`);
+		this._writer.writeLine(`primitive_property = entity_type->create_prim_property( '${internalName.toUpperCase()}' ).`);
+		this._writer.writeLine(`primitive_property->set_edm_name( '${elementName}' ).`);
+
+		if(element?.key)
+				this._writer.writeLine(`primitive_property->set_is_key( ).`);
+		if(!element?.key && !element?.notNull)
+			this._writer.writeLine(`primitive_property->set_is_nullable( ).`);
+		if(element !== EDMPrimitive.Guid && (<any>element)?.["$MaxLength"])
+			this._writer.writeLine(`primitive_property->set_max_length( '${(<any>element)?.["$MaxLength"]}' ).`);
+		this._writer.writeLine();
+	}
+
+	private _writeCSDLNavProperty(elementName: string, element: any){
+		// Internal/external names
+		const navNameEdm      = ABAPUtils.getABAPName(elementName);          // external EDM name
+		const navNameInternal = ABAPUtils.getABAPName(elementName).toUpperCase(); // internal name
+
+		// Target entity type (qualified name from CSDL)
+		let targetTypeQName = element?.$Type;
+		if (!targetTypeQName) return; // nothing to wire
+		targetTypeQName = targetTypeQName.substring((<any>this._entity?.csn)?._service.name.length+1);
+
+		const targetInternal = ABAPUtils.getABAPName(targetTypeQName.toUpperCase());
+
+		// Multiplicity: 'N' (to-many), 'O' (optional to-one), '1' (required to-one)
+		let multiplicity: 'N' | 'O' | '1';
+		if (element?.$Collection) {
+			multiplicity = 'N';
+		} else {
+			multiplicity = element?.$Nullable === false ? '1' : 'O';
+		}
+
+		// Create nav + basic wiring
+		this._writer.writeLine(`nav_property = entity_type->create_navigation_property( '${navNameInternal}' ).`);
+		this._writer.writeLine(`nav_property->set_edm_name( '${navNameEdm}' ).`);
+		this._writer.writeLine(
+			`nav_property->set_target_entity_type_name( iv_entity_type_name = '${targetInternal}' iv_service_ref_name = '' ).`
+		);
+		this._writer.writeLine(`nav_property->set_target_multiplicity( '${multiplicity}' ).`);
+
+		// Partner from CSDL (no complex path info in CSDL; leave empty)
+		if (element?.$Partner) {
+			const partnerInternal = ABAPUtils.getABAPName(element.$Partner).toUpperCase();
+			this._writer.writeLine(`nav_property->set_partner( iv_partner = '${partnerInternal}' iv_complex_property_path = '' ).`);
+		}
+
+		// Referential constraints: { dependent: principal }
+		if (element?.$ReferentialConstraint) {
+			for (const [dependent, principal] of Object.entries<string>(element.$ReferentialConstraint)) {
+				const depInt = ABAPUtils.getABAPName(dependent).toUpperCase();
+				const priInt = ABAPUtils.getABAPName(principal).toUpperCase();
+				this._writer.writeLine(`nav_property->add_referential_constraint( iv_source_property_path = '${depInt}' iv_target_property_path = '${priInt}' ).`);
+			}
+		}
+
+		this._writer.writeLine();
+	}
+
 	public generate(): string {
 		this._writer = new CodeWriter();
-		let entityName = ABAPUtils.getABAPName(this._entity);
+		let entityName = ABAPUtils.getABAPName(this._entity?.csn);
 
 		this._writer.writeLine("DATA:").increaseIndent();
 		this._writer.writeLine("entity_type TYPE REF TO /iwbep/if_v4_med_entity_type,");
@@ -103,9 +219,7 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 		this._writer.writeLine(`" Set External EDM name for entity type`);
 		this._writer.writeLine(`entity_type->set_edm_name( |${entityName}| ).`).writeLine();
 
-		for(let element of this._entity?.elements ?? []){
-			this._processElement(element, "entity_type");
-		}
+		this._writeElements();
 
 		this._writer.writeLine(`" Create Entity Set`);
 		this._writer.writeLine(`entity_set = entity_type->create_entity_set( '${entityName.toUpperCase()}_SET' ).`);

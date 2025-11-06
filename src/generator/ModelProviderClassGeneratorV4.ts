@@ -93,7 +93,9 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 		};
 
 		let entityWriter = new EntityMPCV4Writer();
-		entityWriter.setEntity(entity);
+		let cdsEntityName = (<any>entity.name.substring((<any>entity)._service.name.length+1).replace(/\./g, '_'))
+		let csdlEntity = this._compilerInfo?.csdl[(<any>entity)._service.name][cdsEntityName];
+		entityWriter.setEntity(entity, csdlEntity);
 
 		defineEntityMethod.code = entityWriter.generate().split("\n");
 		this._entityDefineMethods.push(methodName);

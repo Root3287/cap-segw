@@ -30,6 +30,7 @@ Since there are some annotations that are not present in CDS but can be set on S
 | `@segw.ftxt_search`        | Filter Text Search                       |   `boolean`  |
 | `@segw.subscribable`       | Allows to be subscribable                |   `boolean`  |
 | `@segw.filter_required`    | Filtered is required                     |   `boolean`  |
+| `@segw.expand`			 | Expand Complex Types						| 	`boolean`  |
 | `@segw.abap.name`          | ABAP Field Name Override                 |   `string`   |
 | `@segw.abap.type`          | ABAP DDIC Type                           |   `string`   |
 | `@segw.mpc.define.name`    | MPC Define Entity Method Name            |   `string`   |
