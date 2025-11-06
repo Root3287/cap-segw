@@ -48,7 +48,9 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 	public getFileName(): string { 
 		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
 		const service = this._compilerInfo?.csn.services[namespace];
-		return `ZCL_${ABAPUtils.getABAPName(service)}_DPC.abap`;
+		if(!service) return `ZCL_${ABAPUtils.getABAPName(namespace)}_DPC.abap`;
+		if((<any>service)?.["@segw.name"]) return `ZCL_${(<any>service)?.["@segw.name"]}_DPC.abap`;
+		return `ZCL_${ABAPUtils.getABAPName(service.name.split('.').at(-1))}_DPC.abap`;
 	}
 
 	public addEntity(entity: entity): void {

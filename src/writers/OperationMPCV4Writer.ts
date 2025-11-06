@@ -25,7 +25,7 @@ export default class OperationMPCV4Writer implements IFCodeGenerator {
 	}
 
 	private _getPrimitivePrefix(operation: any): string {
-		let actionABAPName = ABAPUtils.getABAPName((<any>operation)?.["@segw.abap.name"] ?? this._getOperationName(operation)).replace(/\./g, '_');
+		let actionABAPName = (<any>operation)?.["@segw.abap.name"] ?? ABAPUtils.getABAPName(operation).replace(/\./g, '_');
 		
 		let primitivePrefix = "";
 		if(operation?.kind === "function"){

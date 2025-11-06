@@ -14,8 +14,12 @@ export class ABAP {
 		if(typeof definition === 'string' || definition instanceof String){
 			return definition.toString().replace(/[\s.]+/g, '_');
 		}
-		let splitNamespace = definition?.name?.split?.(".");
-		let name = (<any>definition)?.["@segw.name"] ?? splitNamespace[splitNamespace.length-1];
+		let defName = definition.name;
+		if(definition?._service){
+			defName = defName.substring(definition._service.name.length + 1);
+		}
+		// let splitNamespace = definition?.name?.split?.(".");
+		let name = (<any>definition)?.["@segw.name"] ?? defName;
 		return name;
 	};
 

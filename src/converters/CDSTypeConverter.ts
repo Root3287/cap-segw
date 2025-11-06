@@ -22,7 +22,7 @@ export default class CDSTypeConverter {
 	 * @param {string} type ABAP type to alias to
 	 */
 	private _createTypeAlias(name: string, type: string){
-		let typeName = `t_${name}`;
+		let typeName = `t_${ABAPUtils.getABAPName(name).replace(/\./g, '_')}`;
 		let typeExists = this._types?.find(s => ("name" in s && s?.name === typeName) || ("structure" in s && s?.structure?.name === typeName));
 		if(typeExists) return;
 
@@ -41,7 +41,7 @@ export default class CDSTypeConverter {
 	}
 
 	private _createComplexType(name: string, typeStruct: any): void {
-		let typeName = `t_${ABAPUtils.getABAPName(name)}`;
+		let typeName = `t_${ABAPUtils.getABAPName(name).replace(/\./g, '_')}`;
 		let typeExists = this._types?.find(s => {
 			 return ("name" in s && s?.name === typeName) ||
 					("structure" in s && s?.structure?.name === typeName)
@@ -131,7 +131,7 @@ export default class CDSTypeConverter {
 	 * @param {csn.Entity}    entity Entity to put into an ABAP Structure
 	 */
 	private _createEntityType(name: string, entity: any): void {
-		let typeName = `t_${name}`;
+		let typeName = `t_${ABAPUtils.getABAPName(entity).replace(/\./g, '_')}`;
 		let typeExists = this._types?.find(s => ("name" in s && s?.name === typeName) || ("structure" in s && s?.structure?.name === typeName));
 		if(typeExists) return;
 
@@ -224,7 +224,7 @@ export default class CDSTypeConverter {
 	 * @param {csn.Action}    action Action to write out
 	 */
 	private _createActionType(name: string, action: any){
-		let typeName = `t_${ABAPUtils.getABAPName(name)}_input`;
+		let typeName = `t_${ABAPUtils.getABAPName(name).replace(/\./g, '_')}_input`;
 
 		if(typeName.length > 30){
 			LOG.warn(`${typeName} is too long. Consider shortening with '@segw.abap.name'`);

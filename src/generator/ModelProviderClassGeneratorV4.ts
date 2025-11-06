@@ -57,7 +57,9 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 	public getFileName(): string { 
 		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
 		const service = this._compilerInfo?.csn.services[namespace];
-		return `ZCL_${ABAPUtils.getABAPName(service)}_MPC.abap`;
+		if(!service) return `ZCL_${ABAPUtils.getABAPName(namespace)}_MPC.abap`;
+		if((<any>service)?.["@segw.name"]) return `ZCL_${(<any>service)?.["@segw.name"]}_MPC.abap`;
+		return `ZCL_${ABAPUtils.getABAPName(service.name.split('.').at(-1))}_MPC.abap`;
 	}
 
 	public addEntity(entity: entity): void {
@@ -65,7 +67,7 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 			return;
 		}
 
-		let entityName = ABAPUtils.getABAPName(entity);
+		let entityName = ABAPUtils.getABAPName(entity).replace(/\./g, '_');
 
 		if(entityName.length > 128){
 			LOG.warn(`${entityName} too long. Consider shortening it with @segw.name`);
