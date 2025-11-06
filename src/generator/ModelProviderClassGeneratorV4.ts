@@ -10,9 +10,9 @@ import {
 import { CompilerInfo } from "../types/frontend";
 import CodeWriter from "./CodeWriter";
 
-import ComplexMPCV4Writer from "../writer/ComplexMPCV4Writer";
-import EntityMPCV4Writer from "../writer/EntityMPCV4Writer";
-import OperationMPCV4Writer from "../writer/OperationMPCV4Writer";
+import ComplexMPCV4Writer from "../writers/ComplexMPCV4Writer";
+import EntityMPCV4Writer from "../writers/EntityMPCV4Writer";
+import OperationMPCV4Writer from "../writers/OperationMPCV4Writer";
 
 import CDSTypeConverter from "../converters/CDSTypeConverter";
 import { CDS as CDSUtils } from "../utils/CDS";
@@ -92,7 +92,7 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 			raising: [ "/iwbep/cx_gateway"],
 		};
 
-		let entityWriter = new EntityWriter();
+		let entityWriter = new EntityMPCV4Writer();
 		entityWriter.setEntity(entity);
 
 		defineEntityMethod.code = entityWriter.generate().split("\n");
