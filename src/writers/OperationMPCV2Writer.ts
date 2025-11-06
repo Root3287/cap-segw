@@ -16,6 +16,7 @@ export default class OperationMPCV2Writer implements IFCodeGenerator {
 	private _className: string = "";
 	private _operations: Record<string, any> = {};
 	private _types?: Array<ABAP.Structure | ABAP.Parameter | ABAP.Table> = [];
+	private _writer: CodeWriter = new CodeWriter();
 
 	public setClassName(className: string){
 		this._className = className;
@@ -36,23 +37,23 @@ export default class OperationMPCV2Writer implements IFCodeGenerator {
 		return actionName;
 	}
 
-	private _writeHeader(writer: CodeWriter){
-		writer.writeLine("data action type ref to /iwbep/if_mgw_odata_action.");
-		writer.writeLine("data parameter type ref to /iwbep/if_mgw_odata_parameter.");
-		writer.writeLine();
+	private _writeHeader(){
+		this._writer.writeLine("data action type ref to /iwbep/if_mgw_odata_action.");
+		this._writer.writeLine("data parameter type ref to /iwbep/if_mgw_odata_parameter.");
+		this._writer.writeLine();
 	}
 
-	private _writeBounded(writer: CodeWriter, operation: any, operationName: string){
+	private _writeBounded(operation: any, operationName: string){
 		if(!operation?.parent){ return; }
-		writer.writeLine(`action->set_action_for( '${ABAPUtils.getABAPName(operation?.parent)}' ).`).writeLine();
+		this._writer.writeLine(`action->set_action_for( '${ABAPUtils.getABAPName(operation?.parent)}' ).`).writeLine();
 	}
 
-	private _writeParams(writer: CodeWriter, operation: any, operationName: string){
+	private _writeParams(operation: any, operationName: string){
 		for(let param of operation?.params ?? []){
 			let paramName = (<any>param?.["@segw.name"]) ?? ABAPUtils.getABAPName(param);
 			let abapName = (<any>param?.["@segw.abap.name"]) ?? ABAPUtils.getABAPName(param);
-			writer.writeLine(`parameter = action->create_input_parameter( iv_paramenter_name = '${paramName}' iv_abap_fieldname = '${abapName}' ).`)
-			writer.writeLine(this._getSetEDMTypeString(param, "parameter->/iwbep/if_mgw_odata_property~"));
+			this._writer.writeLine(`parameter = action->create_input_parameter( iv_paramenter_name = '${paramName}' iv_abap_fieldname = '${abapName}' ).`)
+			this._writer.writeLine(this._getSetEDMTypeString(param, "parameter->/iwbep/if_mgw_odata_property~"));
 		}
 
 		if(!operation?.params){ return; }
@@ -65,24 +66,24 @@ export default class OperationMPCV2Writer implements IFCodeGenerator {
 			return;
 		}
 		let inputName = ("structure" in inputType) ? inputType.structure?.name : inputType.name;
-		writer.writeLine(`action->bind_input_structure( '${this._className}=>${inputName}' ).`);
+		this._writer.writeLine(`action->bind_input_structure( '${this._className}=>${inputName}' ).`);
 	}
 
-	private _writeReturn(writer: CodeWriter, operation: any, operationName: string){
+	private _writeReturn(operation: any, operationName: string){
 		let multiplicity = ("items" in operation?.returns) ? ABAP.Cardinality.cardinality_1_1 : ABAP.Cardinality.cardinality_0_n;
-		writer.writeLine(`action->set_return_multiplicity( '${multiplicity}' ).`);
+		this._writer.writeLine(`action->set_return_multiplicity( '${multiplicity}' ).`);
 
 		// Array
 		let returnEntity = Object.getPrototypeOf(operation?.returns);
 		if("items" in operation?.returns){
 			returnEntity = Object.getPrototypeOf(operation.returns.items);
 		}
-		writer.writeLine(`action->set_return_entity_type( '${ABAPUtils.getABAPName(returnEntity)}' ).`);
-		writer.writeLine();
+		this._writer.writeLine(`action->set_return_entity_type( '${ABAPUtils.getABAPName(returnEntity)}' ).`);
+		this._writer.writeLine();
 	}
 
 	/**
-	 * This convert CDSPrimative to a line that the writer can write out
+	 * This convert CDSPrimative to a line that the this._writer can write out
 	 * @param  {CDSPrimitive} type type to convert
 	 * @param  {string    =    "property"}  propertyVarName name of the property varible
 	 * @return {string}            line to write out
@@ -148,9 +149,9 @@ export default class OperationMPCV2Writer implements IFCodeGenerator {
 	}
 
 	public generate(): string {
-		let writer = new CodeWriter();
+		this._writer = new CodeWriter();
 
-		this._writeHeader(writer);
+		this._writeHeader();
 
 		for(const [operationName, operation] of Object.entries(this._operations)){
 			// Functions must have a return type
@@ -177,14 +178,14 @@ export default class OperationMPCV2Writer implements IFCodeGenerator {
 			let opName = this._getOperationName(operationName, operation);
 			let method = (<any>operation?.["@segw.action.method"]) ?? "POST";
 
-			writer.writeLine(`action = me->model->create_action( '${opName}' ).`);
-			writer.writeLine(`action->set_http_method( '${method}' ).`);
+			this._writer.writeLine(`action = me->model->create_action( '${opName}' ).`);
+			this._writer.writeLine(`action->set_http_method( '${method}' ).`);
 			
-			this._writeBounded(writer, operation, opName);
-			this._writeParams(writer, operation, opName);
-			this._writeReturn(writer, operation, opName);
+			this._writeBounded(operation, opName);
+			this._writeParams(operation, opName);
+			this._writeReturn(operation, opName);
 		}
 
-		return writer.generate();
+		return this._writer.generate();
 	}
 }
