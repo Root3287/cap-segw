@@ -200,12 +200,12 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 		this._writer.writeLine("primitive_property type ref to /iwbep/if_v4_med_prim_prop,");
 		this._writer.writeLine("complex_property type ref to /iwbep/if_v4_med_cplx_prop,");
 		this._writer.writeLine("nav_property TYPE REF TO /iwbep/if_v4_med_nav_prop,");
-		this._writer.writeLine("entity_set TYPE REF TO /iwbep/if_v4_med_entity_set,");
-		this._writer.writeLine(`referenced_entity TYPE ${this._className}=>t_${entityName}.`);
+		this._writer.writeLine("entity_set TYPE REF TO /iwbep/if_v4_med_entity_set.");
+		//this._writer.writeLine(`referenced_entity TYPE ${this._className}=>t_${entityName}.`);
 		this._writer.decreaseIndent().writeLine().writeLine();
 
 		this._writer.writeLine(`" Create Entity Type`);
-		this._writer.writeLine(`entity_type = model->create_entity_type( '${entityName.toUpperCase()}' ).`);
+		this._writer.writeLine(`entity_type = model->create_entity_type( '${entityName.toUpperCase().replace(/\./g, '_')}' ).`);
 
 		// Doesn't Do Deep Reference
 		// this._writer.writeLine("entity_type = model->create_entity_type_by_struct( ").increaseIndent();
