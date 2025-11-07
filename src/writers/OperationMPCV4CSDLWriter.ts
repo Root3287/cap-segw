@@ -52,7 +52,7 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 
 		let csnOperationPath = (operation?.["$IsBound"]) ? [
 			"entities",
-			...operation?.["$Parameter"]?.[0]?.["$Type"].split('.').slice(1),
+			...operation?.["$Parameter"]?.[0]?.["$Type"].split('.').slice(namespace.split('.').length),
 			"actions",
 			name
 		] : ["actions", name];
@@ -74,23 +74,39 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 	}
 
 	private _writeImportOrBound(operation: Operation){
+		const namespace = Object.keys(this._compilerInfo.csdl)[3];
 		// let operation.name = ABAPUtils.getABAPName(this._getoperation.name(operation));
 		if(operation.csdl?.["$IsBound"]) return;
 		this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_import = ${operation.csdl?.["$Kind"].toLowerCase()}->create_${operation.csdl?.["$Kind"].toLowerCase()}_import( |${operation.abap_name.toUpperCase()}| ).`);
 		this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_import->set_edm_name( '${operation.name}' ).`);
+
+		let entitySet = this._compilerInfo.csdl[namespace]?.EntityContainer?.[operation.name]?.["$EntitySet"];
+		let entitySetCSN = [
+			"services",
+			namespace,
+			"entities",
+			entitySet
+		].reduce((arr: any, curr: any)=> arr[curr], this._compilerInfo.csn);
+		let entitySetName = entitySetCSN?.["@segw.set.name"] ?? `ABAPUtils.getABAPName(entitySetCSN).replace(/\./g, '_').toUpperCase()}_SET`;
+		this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_import->set_entity_set_name( '${entitySet}' ).`);
 		this._writer.writeLine();
 	}
 
 	private _writeParams(operation: Operation): void {
+		const namespace = Object.keys(this._compilerInfo.csdl)[3];
+
 		let primitivePrefix = this._getPrimitivePrefix(operation);
 		let index = 0;
 		for(let param of (operation.csdl?.["$Parameter"] ?? [])) {
 			param["$Type"] ??= EDMPrimitive.String;
 			let paramType = (param?.["$Type"].startsWith("Edm")) ? param?.["$Type"] : 
-			param?.["$Type"].split(".").reduce((acc: any, curr: any) => acc[curr], this._compilerInfo?.csdl);
+				[
+					namespace,
+					...param?.["$Type"].split(".").splice(namespace.split('.').length)
+				].reduce((acc: any, curr: any) => acc[curr], this._compilerInfo?.csdl);
 
 			// Skip Complex type for now...
-			if(paramType?.["$Kind"] === "ComplexType") continue;
+			if(!param["$Type"].startsWith("Edm") && paramType?.["$Kind"] === "ComplexType") continue;
 
 			this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_parameter = ${operation.csdl?.["$Kind"].toLowerCase()}->create_parameter( '${param?.["$Name"].toUpperCase()}' ).`);
 			if(param?.["$Type"].startsWith("Edm")){
@@ -117,36 +133,49 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 	}
 
 	private _writeReturn(operation: Operation): void {
+		const namespace = Object.keys(this._compilerInfo.csdl)[3];
 		let primitivePrefix = this._getPrimitivePrefix(operation);
 		// TODO: Collection of Complex Type are not supported
+		
+		// An Action could return nothing.
+		if(operation?.csdl["$Kind"] === "Action" && !operation?.csdl["$ReturnType"]) return;
 
 		this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_return = ${operation.csdl?.["$Kind"].toLowerCase()}->create_return( ).`);
-		if(!operation.csdl?.returns){
+		if(!operation.csdl?.["$ReturnType"]["$Nullable"]){
 			this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_return->set_is_nullable( ).`);
-			return;
 		}
-
-		operation.csdl["$ReturnType"]["$Type"] ??= EDMPrimitive.String;
-		let returnEntity = (operation.csdl["$ReturnType"]["$Type"].startsWith("Edm")) ? operation.csdl["$ReturnType"]["$Type"] :
-			operation.csdl["$ReturnType"]["$Type"].split(".").reduce((acc: any, curr: any) => acc[curr], this._compilerInfo?.csdl);
-		let returnPrimativeName = `${primitivePrefix}R`;
-
+		
 		if(operation.csdl?.["$ReturnType"]?.["$Collection"]){
 			this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_return->set_is_collection( ).`);
 		}
 
-		if(returnPrimativeName.length > 30) LOG.warn(`${returnPrimativeName} is too long consider shortening with "@segw.abap.name".`);
+		operation.csdl["$ReturnType"]["$Type"] ??= EDMPrimitive.String;
+		let returnType = (operation.csdl["$ReturnType"]["$Type"].startsWith("Edm")) ? operation.csdl["$ReturnType"]["$Type"] : 
+				[
+					namespace,
+					...operation.csdl["$ReturnType"]["$Type"].split(".").splice(namespace.split('.').length)
+				].reduce((acc: any, curr: any) => acc[curr], this._compilerInfo?.csdl);
+
 		if(operation.csdl["$ReturnType"]["$Type"].startsWith("Edm")){
+			let returnPrimativeName = `${primitivePrefix}R`;
+			if(returnPrimativeName.length > 30) LOG.warn(`${returnPrimativeName} is too long consider shortening with "@segw.abap.name".`);
 			this._writer.writeLine(`primitive = model->create_primitive_type( |${returnPrimativeName}| ).`);
 			this._writer.writeLine(`primitive->set_edm_type( '${operation.csdl["$ReturnType"]["$Type"].substr(4)}' ).`);
 			this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_return->set_primitive_type( '${operation.csdl["$ReturnType"]["$Type"]}' ).`);
-		}else if(returnEntity["$Kind"] === "ComplexType"){
+		}else if(returnType["$Kind"] === "ComplexType"){
 			// this._writer.writeLine(`primitive = model->create_primitive_type( |${returnPrimativeName}| ).`);
 			// this._writer.writeLine(`primitive->set_edm_type( 'String' ).`);
 			// this._writer.writeLine(`${operation?.["$Kind"].toLowerCase()}_return->set_primitive_type( '${returnPrimativeName}' ).`);
 			// this._writer.writeLine(`${operation?.["$Kind"].toLowerCase()}_return->set_complex_type( '${ABAPUtils.getABAPName(returnEntity)}' ).`);
-		}else if(returnEntity["$Kind"] === "EntityType"){
-			let returnEntityName = ABAPUtils.getABAPName(operation.csdl["$ReturnType"]["$Type"].split('.').at(-1)).toUpperCase();
+		}else if(returnType["$Kind"] === "EntityType"){
+			let returnEntityCSN = [
+				"services",
+				namespace,
+				"entities",
+				operation.csdl["$ReturnType"]["$Type"].split(".").slice(namespace.split('.').length).join('.')
+			].reduce((acc: any, curr: any) => acc[curr], this._compilerInfo.csn);
+
+			let returnEntityName = ABAPUtils.getABAPName(returnEntityCSN).toUpperCase();
 			this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_return->set_entity_type( '${returnEntityName}' ).`);
 			if(!operation.csdl?.["$IsBound"])
 				this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_import->set_entity_set_name( '${returnEntityName}_SET' ).`);
@@ -161,11 +190,9 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 
 		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
 		let operations = Object.entries(this._compilerInfo?.csdl[namespace]).filter(([key, value]: any) => {
-			if(key.startsWith('$')) return false;
-			if(key.startsWith('@')) return false;
-			if(key === "EntityContainer") return false;
-			if(value?.["$Kind"] === "EntityType") return false;
-			if(value?.["$Kind"] === "ComplexType") return false;
+			if(!Array.isArray(value)) return false;
+			if(value.length <= 0) return false;
+			if(value[0]?.["$Kind"] !== "Function" && value[0]?.["$Kind"] !== "Action") return false;
 			return true;
 		});
 
@@ -180,24 +207,23 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 
 				operationInfo.abap_name = (<any>operationInfo.csn)?.["@segw.abap.name"] ?? ABAPUtils.getABAPName(operationInfo.csn).replace(/\./g, '_');
 
+				// operation["$ReturnType"]["$Type"] ??= EDMPrimitive.String;
+				// let isPrimitive = operation["$ReturnType"]["$Type"].startsWith("Edm");
+
 				// Functions must have a return type
 				if(operation?.["$Kind"] === "Function" && !operation?.["$ReturnType"]) LOG.warn(`Function ${operation.name} must have a return type!`);
-
-				let returnType = operation?.["$ReturnType"]?.["$Type"].split('.').reduce((acc: any, curr: any) => { 
-					return acc[curr]; 
-				}, this._compilerInfo?.csdl);
-				
+								
 				// Function Imports must have an entity set
-				if(operation?.["$Kind"] === "Function" && !operation?.["$IsBound"] && returnType?.["$Kind"] !== "EntityType" )
-					LOG.warn(`Function Import ${operation.name} must be an entity!`);
+				// if(operation?.["$Kind"] === "Function" && !operation?.["$IsBound"] && returnType?.["$Kind"] !== "EntityType" )
+					// LOG.warn(`Function Import ${operation.name} must be an entity!`);
 
 				// Netweaver 7.50 Does not support Collection of Complex Types
-				if(operation?.["$ReturnType"]?.["$Collection"] && returnType?.["$Kind"] === "ComplexType")
-					LOG.warn(`Collection of Complex Types are not supported in operation ${operation.name}`);
+				// if(operation?.["$ReturnType"]?.["$Collection"] && returnType?.["$Kind"] === "ComplexType")
+					// LOG.warn(`Collection of Complex Types are not supported in operation ${operation.name}`);
 				
 				// Netweaver 7.50 Only support returning Entity Types for bounded operations
-				if(operation?.["$IsBound"] && returnType?.["$Kind"] !== "EntityType"  )
-					LOG.warn(`Bounded Operations ${operation.name} only support returning Entity Types`);
+				// if(operation?.["$IsBound"] && returnType?.["$Kind"] !== "EntityType"  )
+					// LOG.warn(`Bounded Operations ${operation.name} only support returning Entity Types`);
 				
 				// TODO: This could be re-written as the following ABAP
 				// try.
@@ -205,7 +231,8 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 				// catch /iwbep/cx_gateway.
 				// 	operation = model->create_action( |${operation.name}| ).
 				// endtry.
-				this._writer.writeLine(`${operation?.["$Kind"].toLowerCase()} = model->create_${operation?.["$Kind"].toLowerCase()}( |${operationInfo.name.toUpperCase().replace(/\./g, '_')}| ).`);
+				this._writer.writeLine(`${operation?.["$Kind"].toLowerCase()} = model->create_${operation?.["$Kind"].toLowerCase()}( |${operationInfo.abap_name.toUpperCase().replace(/\./g, '_')}| ).`);
+				this._writer.writeLine(`${operation?.["$Kind"].toLowerCase()}->set_edm_name( |${operationInfo.name.replace(/\./g, '_')}| ).`);
 				
 				this._writeImportOrBound(operationInfo);
 				this._writeParams(operationInfo);
