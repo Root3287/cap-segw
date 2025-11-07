@@ -4,6 +4,8 @@ import IFCodeGenerator from "../generator/IFCodeGenerator";
 import { ABAP as ABAPUtils } from "../utils/ABAP";
 import { CDS as CDSUtils } from "../utils/CDS";
 
+import { Primitive as EDMPrimitive } from "../types/edm";
+
 import { entity } from "@sap/cds";
 
 export default class ComplexMPCV4Writer implements IFCodeGenerator {
@@ -45,7 +47,7 @@ export default class ComplexMPCV4Writer implements IFCodeGenerator {
 				this._writer.writeLine(`primitive_property->set_is_key( ).`);
 			if(!element?.key && !element?.notNull)
 				this._writer.writeLine(`primitive_property->set_is_nullable( ).`);
-			if(primitive !== "edm.Guid" && (<any>element)?.length)
+			if(primitive !== EDMPrimitive.Guid && (<any>element)?.length)
 				this._writer.writeLine(`primitive_property->set_max_length( '${(<any>element).length}' ).`);
 		}else if(
 			(element.type === "cds.Composition" || element.type === "cds.Association") ||
