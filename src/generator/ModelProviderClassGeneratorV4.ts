@@ -13,6 +13,7 @@ import CodeWriter from "./CodeWriter";
 import ComplexMPCV4Writer from "../writers/ComplexMPCV4Writer";
 import EntityMPCV4Writer from "../writers/EntityMPCV4Writer";
 import OperationMPCV4Writer from "../writers/OperationMPCV4Writer";
+import OperationMPCV4CSDLWriter from "../writers/OperationMPCV4CSDLWriter";
 
 import CDSTypeConverter from "../converters/CDSTypeConverter";
 import { CDS as CDSUtils } from "../utils/CDS";
@@ -172,7 +173,12 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 			});
 		});
 
-		let code = operationWriter.generate().split('\n');
+		let operationWriterCSDL = new OperationMPCV4CSDLWriter();
+		operationWriterCSDL.setCompilerInfo(this._compilerInfo);
+
+		operationWriterCSDL.generate();
+
+		let code = operationWriterCSDL.generate().split('\n');
 		this._class.protectedSection ??= { type: ABAPClassSectionType.PROTECTED };
 		this._class.protectedSection.methods ??= {};
 		this._class.protectedSection.methods[`define_actions`] = {
