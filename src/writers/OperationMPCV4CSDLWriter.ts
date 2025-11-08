@@ -74,26 +74,26 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 	}
 
 	private _writeImportOrBound(operation: Operation){
-		const namespace = Object.keys(this._compilerInfo.csdl)[3];
+		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
 		// let operation.name = ABAPUtils.getABAPName(this._getoperation.name(operation));
 		if(operation.csdl?.["$IsBound"]) return;
 		this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_import = ${operation.csdl?.["$Kind"].toLowerCase()}->create_${operation.csdl?.["$Kind"].toLowerCase()}_import( |${operation.abap_name.toUpperCase()}| ).`);
 		this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_import->set_edm_name( '${operation.name}' ).`);
 
-		let entitySet = this._compilerInfo.csdl[namespace]?.EntityContainer?.[operation.name]?.["$EntitySet"];
+		let entitySet = this._compilerInfo?.csdl?.[namespace]?.EntityContainer?.[operation.name]?.["$EntitySet"];
 		let entitySetCSN = [
 			"services",
 			namespace,
 			"entities",
 			entitySet
-		].reduce((arr: any, curr: any)=> arr[curr], this._compilerInfo.csn);
+		].reduce((arr: any, curr: any)=> arr[curr], this._compilerInfo?.csn);
 		let entitySetName = entitySetCSN?.["@segw.set.name"] ?? `ABAPUtils.getABAPName(entitySetCSN).replace(/\./g, '_').toUpperCase()}_SET`;
 		this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_import->set_entity_set_name( '${entitySet}' ).`);
 		this._writer.writeLine();
 	}
 
 	private _writeParams(operation: Operation): void {
-		const namespace = Object.keys(this._compilerInfo.csdl)[3];
+		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
 
 		let primitivePrefix = this._getPrimitivePrefix(operation);
 		let index = 0;
@@ -133,7 +133,7 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 	}
 
 	private _writeReturn(operation: Operation): void {
-		const namespace = Object.keys(this._compilerInfo.csdl)[3];
+		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
 		let primitivePrefix = this._getPrimitivePrefix(operation);
 		// TODO: Collection of Complex Type are not supported
 		
@@ -173,7 +173,7 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 				namespace,
 				"entities",
 				operation.csdl["$ReturnType"]["$Type"].split(".").slice(namespace.split('.').length).join('.')
-			].reduce((acc: any, curr: any) => acc[curr], this._compilerInfo.csn);
+			].reduce((acc: any, curr: any) => acc[curr], this._compilerInfo?.csn);
 
 			let returnEntityName = ABAPUtils.getABAPName(returnEntityCSN).toUpperCase();
 			this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_return->set_entity_type( '${returnEntityName}' ).`);
