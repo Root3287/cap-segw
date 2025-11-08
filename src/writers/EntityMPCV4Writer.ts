@@ -71,7 +71,7 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 		let primitive = CDSUtils.cds2edm((<any>element.type));
 		let elementPrototype = Object.getPrototypeOf(element);
 
-		let elementName = ABAPUtils.getABAPName(element.name);
+		let elementName = ABAPUtils.getABAPName(element.name).replace(/\./g, '_');
 		let elementNameInternal = ABAPUtils.getABAPName(element.name).toUpperCase();
 
 		if(primitive || CDSUtils.cds2edm(elementPrototype.type)){
@@ -192,7 +192,7 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 
 	public generate(): string {
 		this._writer = new CodeWriter();
-		let entityName = ABAPUtils.getABAPName(this._entity?.csn);
+		let entityName = ABAPUtils.getABAPName(this._entity?.csn).replace(/\./g, '_');
 
 		this._writer.writeLine("DATA:").increaseIndent();
 		this._writer.writeLine("entity_type TYPE REF TO /iwbep/if_v4_med_entity_type,");
@@ -205,7 +205,7 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 		this._writer.decreaseIndent().writeLine().writeLine();
 
 		this._writer.writeLine(`" Create Entity Type`);
-		this._writer.writeLine(`entity_type = model->create_entity_type( '${entityName.toUpperCase().replace(/\./g, '_')}' ).`);
+		this._writer.writeLine(`entity_type = model->create_entity_type( '${entityName.toUpperCase()}' ).`);
 
 		// Doesn't Do Deep Reference
 		// this._writer.writeLine("entity_type = model->create_entity_type_by_struct( ").increaseIndent();
