@@ -78,7 +78,12 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 		// let operation.name = ABAPUtils.getABAPName(this._getoperation.name(operation));
 		if(operation.csdl?.["$IsBound"]) return;
 		this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_import = ${operation.csdl?.["$Kind"].toLowerCase()}->create_${operation.csdl?.["$Kind"].toLowerCase()}_import( |${operation.abap_name.toUpperCase()}| ).`);
-		this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_import->set_edm_name( '${operation.name}' ).`);
+		
+		// Actions don't need Entity Set
+		if(operation.csdl?.["$Kind"] === "Action") {
+			this._writer.writeLine();
+			return;
+		}
 
 		let entitySet = this._compilerInfo?.csdl?.[namespace]?.EntityContainer?.[operation.name]?.["$EntitySet"];
 		let entitySetCSN = [
@@ -87,8 +92,8 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 			"entities",
 			entitySet
 		].reduce((arr: any, curr: any)=> arr[curr], this._compilerInfo?.csn);
-		let entitySetName = entitySetCSN?.["@segw.set.name"] ?? `ABAPUtils.getABAPName(entitySetCSN).replace(/\./g, '_').toUpperCase()}_SET`;
-		this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_import->set_entity_set_name( '${entitySet}' ).`);
+		let entitySetName = entitySetCSN?.["@segw.set.name"] ?? `${ABAPUtils.getABAPName(entitySetCSN).replace(/\./g, '_').toUpperCase()}_SET`;
+		this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_import->set_entity_set_name( '${entitySetName}' ).`);
 		this._writer.writeLine();
 	}
 
