@@ -4,6 +4,7 @@ import IFCodeGenerator from "../generator/IFCodeGenerator";
 import { ABAP as ABAPUtils } from "../utils/ABAP";
 import { CDS as CDSUtils } from "../utils/CDS";
 import { Primitive as EDMPrimitive } from "../types/edm";
+import { CompilerInfo } from "../types/frontend";
 
 import cds, { entity } from "@sap/cds";
 
@@ -19,6 +20,11 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 	private _entity?: Entity;
 	private _className: string = "";
 	private _writer: CodeWriter = new CodeWriter();
+	private _compilerInfo?: CompilerInfo;
+
+	public setCompilerInfo(compilerInfo?: CompilerInfo){
+		this._compilerInfo = compilerInfo;
+	}
 
 	public setEntity(csnEntity: entity, csdlEntity: any){
 		this._entity = { csn: csnEntity, csdl: csdlEntity };
