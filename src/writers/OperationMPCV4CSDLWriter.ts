@@ -135,7 +135,10 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 	private _writeReturn(operation: Operation): void {
 		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
 		let primitivePrefix = this._getPrimitivePrefix(operation);
-		// TODO: Collection of Complex Type are not supported
+		
+		// Functions Must have a return type
+		if(operation?.csdl?.["$Kind"] === "Function" && !operation?.csdl?.["$ReturnType"]) 
+			LOG.warn(`Function ${operation.name} must have a return type!`);
 		
 		// An Action could return nothing.
 		if(operation?.csdl["$Kind"] === "Action" && !operation?.csdl["$ReturnType"]) return;
@@ -150,13 +153,31 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 		}
 
 		operation.csdl["$ReturnType"]["$Type"] ??= EDMPrimitive.String;
-		let returnType = (operation.csdl["$ReturnType"]["$Type"].startsWith("Edm")) ? operation.csdl["$ReturnType"]["$Type"] : 
+		let isPrimitive = operation.csdl["$ReturnType"]["$Type"].startsWith("Edm");
+		let returnType = (isPrimitive) ? operation.csdl["$ReturnType"]["$Type"] : 
 				[
 					namespace,
 					...operation.csdl["$ReturnType"]["$Type"].split(".").splice(namespace.split('.').length)
 				].reduce((acc: any, curr: any) => acc[curr], this._compilerInfo?.csdl);
 
-		if(operation.csdl["$ReturnType"]["$Type"].startsWith("Edm")){
+		// Function Import must have an entity set
+		if(
+			operation?.csdl?.["$Kind"] === "Function" && 
+			!operation?.csdl?.["$IsBound"] && 
+			returnType?.["$Kind"] !== "EntityType"
+		){
+			LOG.warn(`Function Import ${operation.name} must be an entity!`);
+		}
+
+		// Netweaver 7.50 Does not support Collection of Complex Types
+		if(operation?.csdl["$ReturnType"]?.["$Collection"] && !isPrimitive && returnType["$Kind"] === "ComplexType")
+			LOG.warn(`Collection of Complex Types are not supported in operation ${operation.name}`);
+
+		// Netweaver 7.50 Only support returning Entity Types for bounded operations
+		if(operation?.csdl["$IsBound"] && !isPrimitive && returnType?.["$Kind"] !== "EntityType")
+			LOG.warn(`Function Import ${operation.name} must be an entity!`);
+
+		if(isPrimitive){
 			let returnPrimativeName = `${primitivePrefix}R`;
 			if(returnPrimativeName.length > 30) LOG.warn(`${returnPrimativeName} is too long consider shortening with "@segw.abap.name".`);
 			this._writer.writeLine(`primitive = model->create_primitive_type( |${returnPrimativeName}| ).`);
@@ -207,24 +228,6 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 
 				operationInfo.abap_name = (<any>operationInfo.csn)?.["@segw.abap.name"] ?? ABAPUtils.getABAPName(operationInfo.csn).replace(/\./g, '_');
 
-				// operation["$ReturnType"]["$Type"] ??= EDMPrimitive.String;
-				// let isPrimitive = operation["$ReturnType"]["$Type"].startsWith("Edm");
-
-				// Functions must have a return type
-				if(operation?.["$Kind"] === "Function" && !operation?.["$ReturnType"]) LOG.warn(`Function ${operation.name} must have a return type!`);
-								
-				// Function Imports must have an entity set
-				// if(operation?.["$Kind"] === "Function" && !operation?.["$IsBound"] && returnType?.["$Kind"] !== "EntityType" )
-					// LOG.warn(`Function Import ${operation.name} must be an entity!`);
-
-				// Netweaver 7.50 Does not support Collection of Complex Types
-				// if(operation?.["$ReturnType"]?.["$Collection"] && returnType?.["$Kind"] === "ComplexType")
-					// LOG.warn(`Collection of Complex Types are not supported in operation ${operation.name}`);
-				
-				// Netweaver 7.50 Only support returning Entity Types for bounded operations
-				// if(operation?.["$IsBound"] && returnType?.["$Kind"] !== "EntityType"  )
-					// LOG.warn(`Bounded Operations ${operation.name} only support returning Entity Types`);
-				
 				// TODO: This could be re-written as the following ABAP
 				// try.
 				// 	operation = model->get_action( |${operation.name| ).
