@@ -6,6 +6,7 @@ import { Cardinality } from "../types/abap";
  * @return {Cardinality}   Cardinality Direction of Associaiton/Composition
  */
 export function getCardinality(a: any): Cardinality | undefined {
+	if(a?.["@segw.abap.multiplicity"]) return a?.["@segw.abap.multiplicity"];
 	if(!a || a?.is2one && a?.is2many) return;
 	if (a.is2one) 	return a?.["notNull"] ? Cardinality.cardinality_1_1 : Cardinality.cardinality_0_1;
 	if (a?.is2many) return a?.["notNull"] ? Cardinality.cardinality_1_n : Cardinality.cardinality_0_n;

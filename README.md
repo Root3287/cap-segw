@@ -21,7 +21,7 @@ Since there are some annotations that are not present in CDS but can be set on S
 |          Annotation        |                 Description              |     Type     |
 |----------------------------|------------------------------------------|--------------|
 | `@segw.name`               | Set the name of the component            |   `string`   |
-| `@segw.ignore`			 | Ignores an element 						|   `boolean   |
+| `@segw.ignore`			 | Ignores an element 						|   `boolean`  |
 | `@segw.sortable`           | Enable Sortable                          |   `boolean`  |
 | `@segw.filterable`         | Enabled Filterable                       |   `boolean`  |
 | `@segw.conversion`         | ABAP Field Conversions                   |   `boolean`  |
@@ -33,6 +33,7 @@ Since there are some annotations that are not present in CDS but can be set on S
 | `@segw.expand`			 | Expand Complex Types						| 	`boolean`  |
 | `@segw.abap.name`          | ABAP Field Name Override                 |   `string`   |
 | `@segw.abap.type`          | ABAP DDIC Type                           |   `string`   |
+| `@segw.abap.multiplicity`	 | Override multiplicity for SEGW 			|   `string`   | 
 | `@segw.mpc.define.name`    | MPC Define Entity Method Name            |   `string`   |
 | `@segw.set.name`           | Set the name of Entity/Association Set   |   `string`   |
 | `@segw.association.name`   | Set the name of the association          |   `string`   |

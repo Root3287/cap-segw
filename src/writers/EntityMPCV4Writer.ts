@@ -205,6 +205,7 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 			let principalElement =  this._entity?.csdl?.[principal];
 			multiplicity = (principalElement?.["notNull"]) ? '1' : 'O';
 		}
+		multiplicity = element?.["segw.abap.multiplicity"] ?? multiplicity;
 
 		for(const [principal, dependent] of Object.entries<string>(element?.["$ReferentialConstraint"] ?? {})){
 			let principalElement = this._entity?.csdl?.[principal];
