@@ -85,6 +85,23 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 			return;
 		}
 
+		let isPrimitive = operation?.csdl?.["$ReturnType"]?.["$Type"]?.startsWith("Edm");
+		let returnType = (isPrimitive) ? operation?.csdl?.["$ReturnType"]?.["$Type"] : 
+				[
+					namespace,
+					...operation?.csdl?.["$ReturnType"]?.["$Type"].split(".").splice(namespace.split('.').length)
+				].reduce((acc: any, curr: any) => acc[curr], this._compilerInfo?.csdl);
+
+		// Function Import must have an entity set
+		if(
+			operation?.csdl?.["$Kind"] === "Function" && 
+			!operation?.csdl?.["$IsBound"] && 
+			returnType?.["$Kind"] !== "EntityType"
+		){
+			LOG.warn(`Function Import ${operation.name} return must be an entity set!`);
+			return;
+		}
+
 		let entitySet = this._compilerInfo?.csdl?.[namespace]?.EntityContainer?.[operation.name]?.["$EntitySet"];
 		let entitySetCSN = [
 			"services",
@@ -165,15 +182,6 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 					...operation.csdl["$ReturnType"]["$Type"].split(".").splice(namespace.split('.').length)
 				].reduce((acc: any, curr: any) => acc[curr], this._compilerInfo?.csdl);
 
-		// Function Import must have an entity set
-		if(
-			operation?.csdl?.["$Kind"] === "Function" && 
-			!operation?.csdl?.["$IsBound"] && 
-			returnType?.["$Kind"] !== "EntityType"
-		){
-			LOG.warn(`Function Import ${operation.name} must be an entity!`);
-		}
-
 		// Netweaver 7.50 Does not support Collection of Complex Types
 		if(operation?.csdl["$ReturnType"]?.["$Collection"] && !isPrimitive && returnType["$Kind"] === "ComplexType")
 			LOG.warn(`Collection of Complex Types are not supported in operation ${operation.name}`);
@@ -204,6 +212,9 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 			let returnEntityName = ABAPUtils.getABAPName(returnEntityCSN).toUpperCase();
 			this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_return->set_entity_type( '${returnEntityName}' ).`);
 		}
+
+		this._writeImportOrBound(operation);
+
 		this._writer.writeLine();
 	}
 
@@ -240,7 +251,6 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 				this._writer.writeLine(`${operation?.["$Kind"].toLowerCase()} = model->create_${operation?.["$Kind"].toLowerCase()}( |${operationInfo.abap_name.toUpperCase().replace(/\./g, '_')}| ).`);
 				this._writer.writeLine(`${operation?.["$Kind"].toLowerCase()}->set_edm_name( |${operationInfo.name.replace(/\./g, '_')}| ).`);
 				
-				this._writeImportOrBound(operationInfo);
 				this._writeParams(operationInfo);
 				this._writeReturn(operationInfo);
 				this._writer.writeLine();
