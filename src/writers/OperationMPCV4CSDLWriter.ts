@@ -120,7 +120,7 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 
 				this._writer.writeLine(`primitive = model->create_primitive_type( |${paramNameInternal}| ).`);
 				this._writer.writeLine(`primitive->set_edm_type( '${param?.["$Type"].substring(4)}' ).`);
-				this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_parameter->set_primitive_type( '${param?.["$Type"].substr(4)}' ).`);
+				this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_parameter->set_primitive_type( '${paramNameInternal}' ).`);
 			}else if(paramType?.["$Kind"] === "EntityType"){
 				let entity = operation.csn.params?.[param?.["$Name"]];
 				if(operation.csdl["$IsBound"] && index === 0){
