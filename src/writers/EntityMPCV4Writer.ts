@@ -143,7 +143,7 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 
 		if(element?.key)
 				this._writer.writeLine(`primitive_property->set_is_key( ).`);
-		if(!element?.key && element?.["$Nullable"])
+		if(!element?.key && !element?.notNull)
 			this._writer.writeLine(`primitive_property->set_is_nullable( ).`);
 		if(element !== EDMPrimitive.Guid && (<any>element)?.["$MaxLength"])
 			this._writer.writeLine(`primitive_property->set_max_length( '${(<any>element)?.["$MaxLength"]}' ).`);
