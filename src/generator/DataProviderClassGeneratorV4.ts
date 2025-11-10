@@ -22,7 +22,7 @@ enum Method {
 export default class DataProviderClassGeneratorV4 implements IFServiceClassGenerator {
 	private _class: ABAP.Class = {
 		name: "",
-		interfaces: [],
+		inheriting: ["/iwbep/cl_v4_abs_data_provider"],
 		publicSection: {
 			type: ABAP.ClassSectionType.PUBLIC,
 			types: [],
