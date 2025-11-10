@@ -5,10 +5,11 @@ import { Class as ABAPClass, ClassSectionType as ABAPClassSectionType} from "../
 import { CompilerInfo } from "../types/frontend";
 import { ABAP as ABAPUtils } from "../utils/ABAP";
 
-import { entity, struct } from "@sap/cds";
+import cds, { entity, struct } from "@sap/cds";
 
 import CodeWriter from "./CodeWriter";
 
+const LOG = cds.log("segw");
 
 enum Method {
 	LIST = 'read_list',
@@ -68,8 +69,12 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 	};
 
 	private _entityCRUDQAction(method: Method, entity: entity){
-		let entityName = ABAPUtils.getABAPName(entity);
+		let entityName = ABAPUtils.getABAPName(entity).replace(/\./g, '_');
 		let methodName = `${entityName}_${method}`;
+		if(methodName.length > 30){
+			LOG.warn(`Method ${methodName} too long. Consider shortening it with '@segw.name'.`);
+		}
+		methodName = (<any>entity)?.["@segw.name"] ?? methodName;
 		this._class.protectedSection ??= { type: ABAPClassSectionType.PROTECTED };
 		this._class.protectedSection.methods ??= {};
 		this._class.protectedSection.methods[methodName] = {
@@ -94,9 +99,13 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 	private _action(action: any){
 		let methodName = "execute";
 		if(action?.parent){
-			methodName += `_${ABAPUtils.getABAPName(entity)}`;
+			methodName += `_${ABAPUtils.getABAPName(action.parent)}`;
 		}
 		methodName += `_${action.name}`;
+		methodName = action?.["@segw.name"] ?? methodName.replace(/\./g,'_');
+		if(methodName.length > 30){
+			LOG.warn(`Method ${methodName} too long. Consider shortening it with '@segw.name'.`);
+		}
 		this._class.protectedSection ??= { type: ABAPClassSectionType.PROTECTED };
 		this._class.protectedSection.methods ??= {};
 		this._class.protectedSection.methods[methodName] = {
@@ -121,9 +130,13 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 	private _function(action: any){
 		let methodName = "execute";
 		if(action?.parent){
-			methodName += `_${ABAPUtils.getABAPName(entity)}`;
+			methodName += `_${ABAPUtils.getABAPName(action.parent)}`;
 		}
 		methodName += `_${action.name}`;
+		methodName = action?.["@segw.name"] ?? methodName.replace(/\./, '_');
+		if(methodName.length > 30){
+			LOG.warn(`Method ${methodName} too long. Consider shortening it with '@segw.name'.`);
+		}
 		this._class.protectedSection ??= { type: ABAPClassSectionType.PROTECTED };
 		this._class.protectedSection.methods ??= {};
 		this._class.protectedSection.methods[methodName] = {
@@ -153,8 +166,8 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 		writer.writeLine();
 		writer.writeLine("CASE entityset_name.").increaseIndent();
 		for(let entity of entities ?? []){
-			let entitySetName = (<any>entity)?.["@segw.set.name"] ?? `${ABAPUtils.getABAPName(entity)}`;
-			writer.writeLine(`WHEN ${entitySetName}.`).increaseIndent();
+			let entitySetName = (<any>entity)?.["@segw.set.name"] ?? `${ABAPUtils.getABAPName(entity).replace(/\./,'_').toUpperCase()}_SET`;
+			writer.writeLine(`WHEN '${entitySetName}'.`).increaseIndent();
 			writer.writeLine(`me->${entitySetName}_${method}(`).increaseIndent();
 			writer.writeLine(`request = io_request`);
 			writer.writeLine(`response = io_response`);
@@ -223,7 +236,8 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 		for(let entity of service?.entities ?? []){
 			for(let action of (service?.actions ?? [])){
 				if(action?.kind === "function") continue;
-				writeHandleAction(`${ABAPUtils.getABAPName(entity)}_${action.name}`, action);
+				let operationName = action?.["@segw.name"] ?? `${ABAPUtils.getABAPName(entity).replace(/\./,'_')}_${action.name}`.toUpperCase();
+				writeHandleAction(operationName, action);
 			}
 		}
 		handleOthers();
@@ -257,7 +271,7 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 		
 		let writeHandleAction = (actionName: string, action: any) => {
 			writer.writeLine(`WHEN '${actionName}'.`).increaseIndent();
-			writer.writeLine(`me->execute_${actionName.replace(/\./g, '_')}(`).increaseIndent();
+			writer.writeLine(`me->execute_${actionName}(`).increaseIndent();
 			writer.writeLine(`request = io_request`);
 			writer.writeLine(`response = io_response`);
 			writer.decreaseIndent().writeLine(`).`);
@@ -291,7 +305,8 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 		for(let entity of service?.entities ?? []){
 			for(let action of (service?.actions ?? [])){
 				if(action?.kind === "function") continue;
-				writeHandleAction(`${ABAPUtils.getABAPName(entity)}_${action.name}`, action);
+				let operationName = action?.["@segw.name"] ?? `${ABAPUtils.getABAPName(entity).replace(/\./,'_')}_${action.name}`.toUpperCase();
+				writeHandleAction(operationName, action);
 			}
 		}
 		handleOthers();
