@@ -236,7 +236,7 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 		for (const [principal, dependent] of Object.entries<string>(element?.["$ReferentialConstraint"] ?? {})) {
 			const depInt = ABAPUtils.getABAPName(dependent).toUpperCase();
 			const priInt = ABAPUtils.getABAPName(principal).toUpperCase();
-			this._writer.writeLine(`nav_property->add_referential_constraint( iv_source_property_path = '${depInt}' iv_target_property_path = '${priInt}' ).`);
+			this._writer.writeLine(`nav_property->add_referential_constraint( iv_source_property_path = '${priInt}' iv_target_property_path = '${depInt}' ).`);
 		}
 
 		this._writer.writeLine();
