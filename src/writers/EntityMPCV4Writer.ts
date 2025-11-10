@@ -13,6 +13,8 @@ type Entity = {
 	csdl: any
 };
 
+type Multiplicity = '1' | 'O' | 'N';
+
 const LOG = cds.log("segw");
 
 export default class EntityMPCV4Writer implements IFCodeGenerator {
@@ -73,6 +75,39 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 		}
 	}
 
+	private _getMultiplicity(element: any): Multiplicity {
+		// Multiplicity: 'N' (to-many), 'O' (optional to-one), '1' (required to-one)
+		let multiplicity: Multiplicity;
+		if (element?.$Collection) {
+			multiplicity = 'N';
+		} else {
+			let [principal] = Object.entries(element?.["$ReferentialConstraint"] ?? {})?.[0];
+			let principalElement =  this._entity?.csdl?.[principal];
+			multiplicity = (principalElement?.["notNull"]) ? '1' : 'O';
+		}
+		multiplicity = element?.["@segw.abap.multiplicity"] ?? multiplicity;
+		return multiplicity;
+	}
+
+	private _isMultiplicityNullable(multiplicity: Multiplicity): boolean {
+		return (multiplicity === '1') ? false : true;
+	};
+
+	private _warnDependentNull(multiplicity: Multiplicity, principalNullable: boolean, dependentNullable: boolean): boolean {
+		// Netweaver 7.50
+		// Principal property is nullable OR navigation is nullable => Dependent property must be nullable
+		return (
+			(principalNullable && !dependentNullable ) ||
+			(this._isMultiplicityNullable(multiplicity) && !dependentNullable)
+		)
+	}
+
+	private _warnDependentNotNull(multiplicity: Multiplicity, principalNullable: boolean, dependentNullable: boolean): boolean {
+		// Netweaver 7.50
+		// if navigation property is not nullable and principal property is not nullable => dependent_property be set to not nullable
+		return (!this._isMultiplicityNullable(multiplicity) && !principalNullable && dependentNullable);
+	};
+
 	private _processElement(element: any): void {
 		let primitive = CDSUtils.cds2edm((<any>element.type));
 		let elementPrototype = Object.getPrototypeOf(element);
@@ -128,6 +163,8 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 	}
 
 	private _processCSDLElement(elementName: string, element: any){
+		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
+
 		if(element?.["$Kind"] === "NavigationProperty"){
 			this._writeCSDLNavProperty(elementName, element);
 			return;
@@ -141,6 +178,42 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 		this._writer.writeLine(`primitive_property = entity_type->create_prim_property( '${internalName.toUpperCase()}' ).`);
 		this._writer.writeLine(`primitive_property->set_edm_name( '${elementName}' ).`);
 
+		// Filter CSDL for nav properties that uses these elements.
+		let navProperties = Object.fromEntries(Object.entries(this._entity?.csdl ?? {}).filter((element: any) => { 
+			let [key, value] = element;
+			return Object.keys(value?.["$ReferentialConstraint"] ?? {}).includes(elementName);
+		}));
+		let fixCSDL = Object.entries(navProperties).some((element: any) => {
+			let [key, value] = element;
+			return value?.["@segw.association.fix"];
+		});
+
+		for(let dependent of Object.values(navProperties)){
+			let multiplicity = this._getMultiplicity(dependent);
+			let target: Entity = {
+				csn: [ 
+					"services", 
+					namespace, 
+					"entities", 
+					(<any>dependent)?.["target"].substring(namespace.length+1)
+				].reduce((acc: any, curr: any) => acc[curr], this._compilerInfo?.csn),
+				csdl: this._compilerInfo?.csdl?.[namespace]?.[(<any>dependent)?.["$Type"].substring((<any>this._entity?.csn)?._service.name.length+1)],
+			};
+			let dependentElement = target?.csn?.elements?.[(<any>dependent)?.["$ReferentialConstraint"]?.[elementName]];
+			let depNull = this._warnDependentNull(multiplicity, !element?.["notNull"], !dependentElement?.["key"] && !dependentElement?.["notNull"]);
+			let depNotNull = this._warnDependentNotNull(multiplicity, !element?.["notNull"], !dependentElement?.["key"] && !dependentElement?.["notNull"]);
+
+			if(fixCSDL && depNull ){
+				// This is the most common case.
+				// We have an association to some key, but the pricipal entity is nullable.
+				if(dependentElement?.["key"]){ element["notNull"] = true; }
+			}
+				
+			if(fixCSDL && depNotNull){
+
+			}
+		}
+
 		if(element?.key)
 				this._writer.writeLine(`primitive_property->set_is_key( ).`);
 		if(!element?.key && !element?.notNull)
@@ -153,27 +226,6 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 
 	private _writeCSDLNavProperty(elementName: string, element: any){
 		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
-
-		type Multiplicity = '1' | 'O' | 'N';
-
-		let isMultiplicityNullable = (multiplicity: Multiplicity): boolean => {
-			return (multiplicity === '1') ? false : true;
-		};
-
-		let warnDependentNull = (multiplicity: Multiplicity, principalNullable: boolean, dependentNullable: boolean): boolean => {
-			// Netweaver 7.50
-			// Principal property is nullable OR navigation is nullable => Dependent property must be nullable
-			return (
-				(principalNullable && !dependentNullable ) ||
-				( isMultiplicityNullable(multiplicity) && !dependentNullable)
-			)
-		};
-
-		let warnDependentNotNull = (multiplicity: Multiplicity, principalNullable: boolean, dependentNullable: boolean): boolean => {
-			// Netweaver 7.50
-			// if navigation property is not nullable and principal property is not nullable => dependent_property be set to not nullable
-			return (!isMultiplicityNullable(multiplicity) && !principalNullable && dependentNullable);
-		};
 
 		// Internal/external names
 		const navNameEdm      = ABAPUtils.getABAPName(elementName);          // external EDM name
@@ -196,26 +248,39 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 
 		const targetInternal = ABAPUtils.getABAPName(target.csn).replace(/\./g, '_').toUpperCase();
 
-		// Multiplicity: 'N' (to-many), 'O' (optional to-one), '1' (required to-one)
-		let multiplicity: Multiplicity;
-		if (element?.$Collection) {
-			multiplicity = 'N';
-		} else {
-			let [principal] = Object.entries(element?.["$ReferentialConstraint"] ?? {})?.[0];
-			let principalElement =  this._entity?.csdl?.[principal];
-			multiplicity = (principalElement?.["notNull"]) ? '1' : 'O';
-		}
-		multiplicity = element?.["segw.abap.multiplicity"] ?? multiplicity;
+		let multiplicity = this._getMultiplicity(element);
+
+		let fixCSDL = element?.["@segw.association.fix"];
 
 		for(const [principal, dependent] of Object.entries<string>(element?.["$ReferentialConstraint"] ?? {})){
 			let principalElement = this._entity?.csdl?.[principal];
 			let dependentElement = target?.csn?.elements?.[dependent];
+			let depNull = this._warnDependentNull(
+				multiplicity, 
+				!principalElement?.["notNull"], 
+				!dependentElement?.["key"] && !dependentElement?.["notNull"]
+			);
+			let depNotNull = this._warnDependentNotNull(
+				multiplicity, 
+				!principalElement?.["notNull"], 
+				!dependentElement?.["key"] && !dependentElement?.["notNull"]
+			);
 			
-			if(warnDependentNull(multiplicity, !principalElement?.["notNull"], !dependentElement?.["key"] && !dependentElement?.["notNull"]))
-				LOG.warn(`Principal property '${principal}' of '${ABAPUtils.getABAPName(this._entity?.csn)}.${elementName}' is nullable, dependent property '${ABAPUtils.getABAPName(target.csn)}.${dependent}' must be nullable!`);
+			if(!fixCSDL && depNull)
+				LOG.warn(`Principal property '${principal}' of '${ABAPUtils.getABAPName(this._entity?.csn)}.${elementName}' is nullable, dependent property '${ABAPUtils.getABAPName(target.csn)}.${dependent}' must be nullable! Use '@segw.association.fix' or define the association constraints manually!`);
 			
-			if(warnDependentNotNull(multiplicity, !principalElement?.["notNull"], !dependentElement?.["key"] && !dependentElement?.["notNull"]))
-				LOG.warn(`Navigation and Principal property of '${this._entity?.csn.name}.${elementName}' is not nullable, dependent property ${dependent} be set to nullable!`);
+			if(!fixCSDL && depNotNull)
+				LOG.warn(`Navigation and Principal property of '${this._entity?.csn.name}.${elementName}' is not nullable, dependent property ${dependent} be set to not nullable! Use '@segw.association.fix' or define the association constraints manually!`);
+		
+			if(fixCSDL && depNull){
+				if(dependentElement?.["key"]){ principalElement["notNull"] = true; }
+			}
+
+			if(fixCSDL && depNotNull){}
+
+			if(fixCSDL){
+				multiplicity = this._getMultiplicity(element);	
+			}
 		}
 
 		// Create nav + basic wiring
