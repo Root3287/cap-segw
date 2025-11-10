@@ -255,7 +255,8 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 		this._class.protectedSection.methods ??= {};
 		this._class.protectedSection.methods[`/iwbep/if_v4_dp_basic~execute_action`] = {
 			type: ABAP.MethodType.MEMBER,
-			code: code
+			code: code,
+			isRedefinition: true
 		};
 	}
 
@@ -324,7 +325,8 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 		this._class.protectedSection.methods ??= {};
 		this._class.protectedSection.methods[`/iwbep/if_v4_dp_basic~execute_function`] = {
 			type: ABAP.MethodType.MEMBER,
-			code: code
+			code: code,
+			isRedefinition: true,
 		};
 	}
 
