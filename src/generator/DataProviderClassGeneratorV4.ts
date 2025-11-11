@@ -205,7 +205,7 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 		
 		let writeHandleAction = (actionName: string, action: any) => {
 			writer.writeLine(`WHEN '${ABAPUtils.getABAPName(action)}'.`).increaseIndent();
-			writer.writeLine(`me->execute_${actionName}(`).increaseIndent();
+			writer.writeLine(`me->${actionName}(`).increaseIndent();
 			writer.writeLine(`request = io_request`);
 			writer.writeLine(`response = io_response`);
 			writer.decreaseIndent().writeLine(`).`);
@@ -292,7 +292,7 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 			writer.decreaseIndent();
 		};
 
-		writer.writeLine("IF action_import IS NOT INITIAL.").increaseIndent();
+		writer.writeLine("IF function_import IS NOT INITIAL.").increaseIndent();
 		writer.writeLine("CASE function_import.").increaseIndent();
 		for(let action of service?.actions ?? []){
 			if(action?.kind === "action") continue;
@@ -306,7 +306,7 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 
 		writer.writeLine();
 
-		writer.writeLine("IF action is not initial.").increaseIndent();
+		writer.writeLine("IF function is not initial.").increaseIndent();
 		writer.writeLine("CASE function.").increaseIndent();
 		for(let entity of service?.entities ?? []){
 			for(let action of (entity?.actions ?? [])){
