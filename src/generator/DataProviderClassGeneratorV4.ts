@@ -134,6 +134,9 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 
 	private _function(action: any){
 		let methodName = this._getOperationName(action);
+		if(methodName.length > 30){
+			LOG.warn(`Method ${methodName} too long. Consider shortening it with '@segw.name'.`);
+		}
 		this._class.protectedSection ??= { type: ABAPClassSectionType.PROTECTED };
 		this._class.protectedSection.methods ??= {};
 		this._class.protectedSection.methods[methodName] = {
