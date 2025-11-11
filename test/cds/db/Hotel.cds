@@ -1,4 +1,12 @@
-using { cuid, managed, temporal, Country } from '@sap/cds/common';
+namespace Hotel;
+
+using { cuid, managed, temporal, sap.common.Countries as SAPCountry } from '@sap/cds/common';
+
+entity Countries : SAPCountry {
+	key code: String(3) not null;
+}
+
+type Country : Association to Countries;
 
 type Address {
 	street_1: String;
@@ -9,8 +17,8 @@ type Address {
 	region: String;
 	postal: String;
 
-	@segw.association.ignore
-	country: Country not null;
+	country_code: String(3) not null;
+	country: Country;
 }
 
 entity Location : cuid, managed {
@@ -20,7 +28,7 @@ entity Location : cuid, managed {
 }
 
 entity Room: cuid, managed {
-	@segw.association.ignore: true
+	@segw.association.fix
 	location: Association to Location;
 	roomNumber: String(5);
 
@@ -46,6 +54,9 @@ entity Reservation: cuid, temporal, managed {
 		COMPLETED;
 	};
 
+	@segw.association.fix
 	customer: Association to one Customer;
+	
+	@segw.association.fix
 	room: Association to one Room;
 }

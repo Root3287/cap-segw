@@ -1,28 +1,28 @@
-using { Address, Location, Customer, Reservation } from '../db/Hotel.cds';
+using { Hotel.Address, Hotel.Location, Hotel.Customer, Hotel.Reservation } from '../db/Hotel.cds';
 
-@segw.name: 'ZHOTEL'
+@segw.name: 'ZODATAV4_TEST_TIM_01'
 service Hotel {
-	entity Locations as projection on Location actions {
+	entity Locations as projection on Hotel.Location actions {
 		// function getAverageRating() returns Decimal;
 
 		@segw.abap.name: 'pend_cust_day'
-		function getPendingCustomersForDay(day: Date) returns array of Customers;
+		function getPendingCustomersForDay(day: Date) returns array of Hotel.Customers;
 
 		@segw.abap.name: 'pend_resv_day'
-		function getPendingReservationForDay(day: Date) returns array of Reservations;
-		function getReservations() returns array of Reservations;
+		function getPendingReservationForDay(day: Date) returns array of Hotel.Reservations;
+		function getReservations() returns array of Hotel.Reservations;
 	};
 
-	entity Customers as projection on Customer;
+	entity Customers as projection on Hotel.Customer;
 
-	entity Reservations as projection on Reservation
+	entity Reservations as projection on Hotel.Reservation
 	actions {
-		action submit() returns Reservations;
-		action checkIn() returns Reservations;
-		action cancel(reason: String) returns Reservations; 
+		action submit() returns Hotel.Reservations;
+		action checkIn() returns Hotel.Reservations;
+		action cancel(reason: String) returns Hotel.Reservations; 
 	};
 
-	function getNearestHotel(address: Address) returns Locations;
-	function getTopLocations(count: Integer) returns array of Locations;
-	action process() returns Address;
+	function getNearestHotel(address: Address) returns Hotel.Locations;
+	function getTopLocations(count: Integer) returns array of Hotel.Locations;
+	action process() returns Hotel.Address;
 }
