@@ -168,8 +168,9 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 		writer.writeLine();
 		writer.writeLine("CASE entityset_name.").increaseIndent();
 		for(let entity of entities ?? []){
-			let entityName = ABAPUtils.getABAPName(entity).replace(/\./,'_');
-			let entitySetName = (<any>entity)?.["@segw.set.name"] ?? `${entityName.toUpperCase()}_SET`;
+			let entityName = ABAPUtils.getABAPName(entity);
+			let entitySetNameInternal = entityName.replace(/\./,'_');
+			let entitySetName = (<any>entity)?.["@segw.set.name"] ?? `${entitySetNameInternal.toUpperCase()}`;
 			writer.writeLine(`WHEN '${entitySetName}'.`).increaseIndent();
 			writer.writeLine(`me->${entityName}_${method}(`).increaseIndent();
 			writer.writeLine(`request = io_request`);

@@ -309,7 +309,9 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 
 	public generate(): string {
 		this._writer = new CodeWriter();
-		let entityName = ABAPUtils.getABAPName(this._entity?.csn).replace(/\./g, '_');
+		let entityName = ABAPUtils.getABAPName(this._entity?.csn);
+		let entityNameInternal = entityName.replace(/\./g, '_');
+		let entitySetName = (<any>entity)?.["@segw.set.name"] ?? entityNameInternal;
 
 		this._writer.writeLine("DATA:").increaseIndent();
 		this._writer.writeLine("entity_type TYPE REF TO /iwbep/if_v4_med_entity_type,");
@@ -339,8 +341,8 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 		this._writeElements();
 
 		this._writer.writeLine(`" Create Entity Set`);
-		this._writer.writeLine(`entity_set = entity_type->create_entity_set( '${entityName.toUpperCase()}_SET' ).`);
-		// this._writer.writeLine(`entity_set->set_edm_name( ).`);
+		this._writer.writeLine(`entity_set = entity_type->create_entity_set( '${entitySetName.toUpperCase()}' ).`);
+		this._writer.writeLine(`entity_set->set_edm_name( |${entitySetName}| ).`);
 		this._writer.writeLine();
 
 		return this._writer.generate();
