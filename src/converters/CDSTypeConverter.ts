@@ -1,3 +1,4 @@
+import IFABAPTypeGenerator from "./IFABAPTypeGenerator";
 import * as ABAP from "../types/abap";
 import * as CDS from "../types/cds";
 import cds, { csn, Service, entity, struct, service } from "@sap/cds";
@@ -6,7 +7,7 @@ import { ABAP as ABAPUtils } from "../utils/ABAP";
 
 const LOG = cds.log("segw");
 
-export default class CDSTypeConverter {
+export default class CDSTypeConverter implements IFABAPTypeGenerator {
 	private _service ?: any = null;
 	private _types: Array<ABAP.Structure | ABAP.Parameter | ABAP.Table>  = [];
 
