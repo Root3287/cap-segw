@@ -107,6 +107,7 @@ export default class CDSTypeConverter implements IFABAPTypeGenerator {
 					let pName = (property.type.split('.').length) ? property.type.split('.').at(-1) : property.type;
 					propertyType = `${ABAPUtils.getABAPName(pName)}`;
 					this._createComplexType(propertyType, property);
+					propertyType = `t_${propertyType}`;
 				}
 			}
 

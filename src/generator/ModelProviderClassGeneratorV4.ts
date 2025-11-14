@@ -148,7 +148,8 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 
 	private _processComplexTypes(service: any){
 		let writer = new ComplexMPCV4Writer();
-		// writer.setComplexTypes(this._complexTypes);
+		writer.setCompilerInfo(this._compilerInfo);
+
 		let code = writer.generate().split('\n');
 		this._class.protectedSection ??= { type: ABAPClassSectionType.PRIVATE };
 		this._class.protectedSection.methods ??= {};

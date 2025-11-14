@@ -197,10 +197,15 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 			this._writer.writeLine(`primitive->set_edm_type( '${operation.csdl["$ReturnType"]["$Type"].substr(4)}' ).`);
 			this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_return->set_primitive_type( '${operation.csdl["$ReturnType"]["$Type"]}' ).`);
 		}else if(returnType["$Kind"] === "ComplexType"){
-			// this._writer.writeLine(`primitive = model->create_primitive_type( |${returnPrimativeName}| ).`);
-			// this._writer.writeLine(`primitive->set_edm_type( 'String' ).`);
-			// this._writer.writeLine(`${operation?.["$Kind"].toLowerCase()}_return->set_primitive_type( '${returnPrimativeName}' ).`);
-			// this._writer.writeLine(`${operation?.["$Kind"].toLowerCase()}_return->set_complex_type( '${ABAPUtils.getABAPName(returnEntity)}' ).`);
+			let complexType = [
+				"services",
+				namespace,
+				"model",
+				"definitions",
+				operation.csdl["$ReturnType"]["$Type"]
+			].reduce((acc: any, curr: any) => acc[curr], this._compilerInfo?.csn)
+			let internalComplexTypeName = ABAPUtils.getABAPName(complexType).replace(/\./,'_').toUpperCase();
+			this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_return->set_complex_type( '${internalComplexTypeName}' ).`)
 		}else if(returnType["$Kind"] === "EntityType"){
 			let returnEntityCSN = [
 				"services",
