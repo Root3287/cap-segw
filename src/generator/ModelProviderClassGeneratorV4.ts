@@ -15,7 +15,7 @@ import EntityMPCV4Writer from "../writers/EntityMPCV4Writer";
 import OperationMPCV4Writer from "../writers/OperationMPCV4Writer";
 import OperationMPCV4CSDLWriter from "../writers/OperationMPCV4CSDLWriter";
 
-import CDSTypeConverter from "../converters/CDSTypeConverter";
+import CDSV4TypeConverter from "../converters/CDSV4TypeConverter";
 import { CDS as CDSUtils } from "../utils/CDS";
 
 import { ABAP as ABAPUtils } from "../utils/ABAP";
@@ -113,11 +113,12 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 
 		this._class.name = this.getFileName().split('.')[0];
 
-		let typeConverter = new CDSTypeConverter();
+		let typeConverter = new CDSV4TypeConverter();
 		typeConverter.setService(service);
+		typeConverter.setCSDL(this._compilerInfo?.csdl);
 		if(this._class?.publicSection?.types)
 			this._class.publicSection.types = typeConverter.getABAPTypes();
-		
+
 		// Generate defines
 		for(const entity of service?.entities ?? []){
 			this.addEntity(entity);
