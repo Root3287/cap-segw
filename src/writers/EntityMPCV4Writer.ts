@@ -324,7 +324,7 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 		this._writer.decreaseIndent().writeLine().writeLine();
 
 		this._writer.writeLine(`" Create Entity Type`);
-		this._writer.writeLine(`entity_type = model->create_entity_type( '${entityName.toUpperCase()}' ).`);
+		this._writer.writeLine(`entity_type = model->create_entity_type( '${entityNameInternal.toUpperCase()}' ).`);
 
 		// Doesn't Do Deep Reference
 		// this._writer.writeLine("entity_type = model->create_entity_type_by_struct( ").increaseIndent();
@@ -336,7 +336,7 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 		// this._writer.decreaseIndent().writeLine(").").writeLine();
 
 		this._writer.writeLine(`" Set External EDM name for entity type`);
-		this._writer.writeLine(`entity_type->set_edm_name( |${entityName}| ).`).writeLine();
+		this._writer.writeLine(`entity_type->set_edm_name( |${entityNameInternal}| ).`).writeLine();
 
 		this._writeElements();
 
