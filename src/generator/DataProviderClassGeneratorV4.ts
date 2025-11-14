@@ -84,7 +84,7 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 		if(methodName.length > 30){
 			LOG.warn(`Method ${methodName} too long. Consider shortening it with '@segw.name'.`);
 		}
-		methodName = (<any>entity)?.["@segw.name"] ?? methodName;
+		// methodName = (<any>entity)?.["@segw.name"] ?? methodName;
 		this._class.protectedSection ??= { type: ABAPClassSectionType.PROTECTED };
 		this._class.protectedSection.methods ??= {};
 		this._class.protectedSection.methods[methodName] = {
@@ -169,10 +169,12 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 		writer.writeLine("CASE entityset_name.").increaseIndent();
 		for(let entity of entities ?? []){
 			let entityName = ABAPUtils.getABAPName(entity);
-			let entitySetNameInternal = entityName.replace(/\./,'_');
-			let entitySetName = (<any>entity)?.["@segw.set.name"] ?? `${entitySetNameInternal.toUpperCase()}`;
+			let entityNameInternal = entityName.replace(/\./, '_');
+			let entitySetName = (<any>entity)?.["@segw.set.name"] ?? `${entityNameInternal.toUpperCase()}`;
+			let methodName = `${entityNameInternal}_${method}`;
+
 			writer.writeLine(`WHEN '${entitySetName}'.`).increaseIndent();
-			writer.writeLine(`me->${entityName}_${method}(`).increaseIndent();
+			writer.writeLine(`me->${methodName}(`).increaseIndent();
 			writer.writeLine(`request = io_request`);
 			writer.writeLine(`response = io_response`);
 			writer.decreaseIndent().writeLine(`).`);
