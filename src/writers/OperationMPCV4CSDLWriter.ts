@@ -109,7 +109,7 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 			"entities",
 			entitySet
 		].reduce((arr: any, curr: any)=> arr[curr], this._compilerInfo?.csn);
-		let entitySetName = entitySetCSN?.["@segw.set.name"] ?? `${ABAPUtils.getABAPName(entitySetCSN).replace(/\./g, '_').toUpperCase()}_SET`;
+		let entitySetName = entitySetCSN?.["@segw.set.name"] ?? ABAPUtils.getABAPName(entitySetCSN).replace(/\./g, '_').toUpperCase();
 		this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_import->set_entity_set_name( '${entitySetName}' ).`);
 		this._writer.writeLine();
 	}
