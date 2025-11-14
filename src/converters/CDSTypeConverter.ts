@@ -35,8 +35,9 @@ export default class CDSTypeConverter {
 			structure: { 
 				name: `t${typeName}`, 
 				referenceType: ABAP.ParameterReferenceType.TYPE_STANDARD_TABLE, 
-				type: typeName
-			}
+				type: typeName,
+			},
+			key: "with default key",
 		});
 	}
 
@@ -120,8 +121,9 @@ export default class CDSTypeConverter {
 			structure: {
 				name: `t${typeName}`,
 				referenceType: ABAP.ParameterReferenceType.TYPE_STANDARD_TABLE,
-				type: typeName
-			}
+				type: typeName,
+			},
+			key: "with default key",
 		});
 	}
 
@@ -213,8 +215,9 @@ export default class CDSTypeConverter {
 			structure: { 
 				name: `t${typeName}`, 
 				referenceType: ABAP.ParameterReferenceType.TYPE_STANDARD_TABLE, 
-				type: typeName 
-			}
+				type: typeName,
+			},
+			key: "with default key",
 		});
 	}
 
