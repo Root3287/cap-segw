@@ -207,7 +207,8 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 		writer.writeLine();
 		
 		let writeHandleAction = (actionName: string, action: any) => {
-			writer.writeLine(`WHEN '${ABAPUtils.getABAPName(action)}'.`).increaseIndent();
+			let internalABAPName = action?.["@segw.abap.name"] ?? ABAPUtils.getABAPName(action).replace(/\./,'_').toUpperCase();
+			writer.writeLine(`WHEN '${internalABAPName}'.`).increaseIndent();
 			writer.writeLine(`me->${actionName}(`).increaseIndent();
 			writer.writeLine(`request = io_request`);
 			writer.writeLine(`response = io_response`);
@@ -278,7 +279,8 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 		writer.writeLine();
 		
 		let writeHandleAction = (actionName: string, action: any) => {
-			writer.writeLine(`WHEN '${ABAPUtils.getABAPName(action)}'.`).increaseIndent();
+			let internalABAPName = action?.["@segw.abap.name"] ?? ABAPUtils.getABAPName(action).replace(/\./,'_').toUpperCase();
+			writer.writeLine(`WHEN '${internalABAPName}'.`).increaseIndent();
 			writer.writeLine(`me->${actionName}(`).increaseIndent();
 			writer.writeLine(`request = io_request`);
 			writer.writeLine(`response = io_response`);
