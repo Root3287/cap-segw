@@ -59,10 +59,10 @@ export default class OperationMPCV2Writer implements IFCodeGenerator {
 		if(!operation?.params){ return; }
 
 		let inputType = this?._types?.find((type: any) => { 
-			return type?.name === `t_${operationName}_input`;
+			return type?.name === `t_${operationName.replace(/\./g,'_')}_input`;
 		});
 		if(!inputType){
-			LOG.warn(`Could not find type 't_${operationName}_input' for action ${operationName}` );
+			LOG.warn(`Could not find type 't_${operationName.replace(/\./g,'_')}_input' for action ${operationName}` );
 			return;
 		}
 		let inputName = ("structure" in inputType) ? inputType.structure?.name : inputType.name;
