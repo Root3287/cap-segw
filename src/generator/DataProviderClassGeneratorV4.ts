@@ -431,7 +431,7 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 		writer.writeLine("WHEN OTHERS.").increaseIndent();
 		handleOthers();
 		writer.decreaseIndent();
-		writer.decreaseIndent().writeLine("ENDCASE");
+		writer.decreaseIndent().writeLine("ENDCASE.");
 
 		let code = writer.generate().split('\n');
 		this._class.publicSection ??= { type: ABAPClassSectionType.PUBLIC };
@@ -477,7 +477,7 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 		writer.writeLine("WHEN OTHERS.").increaseIndent();
 		handleOthers();
 		writer.decreaseIndent();
-		writer.decreaseIndent().writeLine("ENDCASE");
+		writer.decreaseIndent().writeLine("ENDCASE.");
 
 		let code = writer.generate().split('\n');
 		this._class.publicSection ??= { type: ABAPClassSectionType.PUBLIC };
