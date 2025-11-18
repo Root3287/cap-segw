@@ -229,8 +229,10 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		});
 
 		let writer = new OperationMPCV2Writer();
+		writer.setClassName(this.getFileName().substring(0, this.getFileName().length - 5));
 		writer.setOperationsTypes(this._class?.publicSection?.types);
 		writer.addOperations(actions);
+
 		let code = writer.generate().split('\n');
 		this._class.protectedSection ??= { type: ABAPClassSectionType.PROTECTED };
 		this._class.protectedSection.methods ??= {};
