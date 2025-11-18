@@ -328,7 +328,6 @@ export default class CDSTypeConverter implements IFABAPTypeGenerator {
 
 			for(let action of entity?.actions ?? []){
 				let entityActionName = 	(<any>action)?.["@segw.abap.name"] ??
-										ABAPUtils.getABAPName(action) ??
 										`${ABAPUtils.getABAPName(entity)}.${ABAPUtils.getABAPName(action)}`;
 				this._createActionType(entityActionName, action);
 			}
