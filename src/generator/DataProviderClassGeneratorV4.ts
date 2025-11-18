@@ -68,6 +68,7 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 		});
 
 		this._entityHandleTargetRef(entity);
+		this._entityHandleTargetRefList(entity);
 	};
 
 	private _getOperationName(action: any): string {
@@ -182,6 +183,33 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 				"request->get_todos( importing es_todo_list = todo_list ).",
 				"",
 				"data done_list type /iwbep/if_v4_requ_basic_ref_r=>ty_s_todo_process_list.",
+				"response->set_is_done( done_list ).",
+			]
+		};
+	}
+
+	private _entityHandleTargetRefList(entity: entity){
+		let entityName = ABAPUtils.getABAPName(entity).replace(/\./g, '_');
+		let methodName = (<any>entity)?.["@segw.target_ref_list.method"] ?? `${entityName}_target_ref_l`;
+		if(methodName.length > 30){
+			LOG.warn(`Method ${methodName} too long. Consider shortening it with '@segw.name' or '@segw.target_ref_list.method'`);
+		}
+		this._class.protectedSection ??= { type: ABAPClassSectionType.PROTECTED };
+		this._class.protectedSection.methods ??= {};
+		this._class.protectedSection.methods[methodName] = {
+			type: ABAP.MethodType.MEMBER,
+			importing: [
+				{ name: "request", 	referenceType: ABAP.ParameterReferenceType.TYPE_REF, type: `/iwbep/if_v4_requ_basic_ref_l` },
+				{ name: "response", referenceType: ABAP.ParameterReferenceType.TYPE_REF, type: `/iwbep/if_v4_resp_basic_ref_l` },
+			],
+			raising: [
+				"/IWBEP/CX_GATEWAY"
+			],
+			code: [
+				"data todo_list type /iwbep/if_v4_requ_basic_ref_l=>ty_s_todo_list.",
+				"request->get_todos( importing es_todo_list = todo_list ).",
+				"",
+				"data done_list type /iwbep/if_v4_requ_basic_ref_l=>ty_s_todo_process_list.",
 				"response->set_is_done( done_list ).",
 			]
 		};
@@ -415,6 +443,52 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 		};
 	}
 
+	private _handleRefTargetKeyDataList(service: any){
+		let writer = new CodeWriter();
+
+		writer.writeLine("data source_entity_type type /iwbep/if_v4_med_element=>ty_e_med_internal_name.");
+		writer.writeLine();
+		writer.writeLine("io_request->get_source_entity_type( importing ev_source_entity_type_name = source_entity_type ).");
+		writer.writeLine();
+
+		let writeHandleRef = (methodName: string, entity: any) => {
+			let internalABAPName = entity?.["@segw.abap.name"] ?? ABAPUtils.getABAPName(entity).replace(/\./,'_').toUpperCase();
+			writer.writeLine(`WHEN '${internalABAPName}'.`).increaseIndent();
+			writer.writeLine(`me->${methodName}(`).increaseIndent();
+			writer.writeLine(`request = io_request`);
+			writer.writeLine(`response = io_response`);
+			writer.decreaseIndent().writeLine(`).`);
+			writer.decreaseIndent().writeLine();
+		}
+
+		let handleOthers = () => {
+			writer.writeLine(`super->/iwbep/if_v4_dp_basic~read_ref_target_key_data_list(`).increaseIndent();
+			writer.writeLine(`io_request = io_request`)
+			writer.writeLine(`io_response = io_response`);
+			writer.decreaseIndent().writeLine(`).`);
+		};
+
+		writer.writeLine("CASE source_entity_type.").increaseIndent();
+		for(let entity of service?.entities ?? []){
+			let entityName = ABAPUtils.getABAPName(entity).replace(/\./g, '_');
+			let methodName = (<any>entity)?.["@segw.target_ref_list.method"] ?? `${entityName}_target_ref_l`;
+			writeHandleRef(methodName, entity);
+		}
+		writer.writeLine("WHEN OTHERS.").increaseIndent();
+		handleOthers();
+		writer.decreaseIndent();
+		writer.decreaseIndent().writeLine("ENDCASE");
+
+		let code = writer.generate().split('\n');
+		this._class.publicSection ??= { type: ABAPClassSectionType.PUBLIC };
+		this._class.publicSection.methods ??= {};
+		this._class.publicSection.methods[`/iwbep/if_v4_dp_basic~read_ref_target_key_data_list`] = {
+			type: ABAP.MethodType.MEMBER,
+			code: code,
+			isRedefinition: true
+		};
+	}
+
 	public generate(): string {
 		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
 		const service = this._compilerInfo?.csn.services[namespace];
@@ -440,6 +514,7 @@ export default class DataProviderClassGeneratorV4 implements IFServiceClassGener
 		this._handleActions(service);
 		this._handleFunctions(service);
 		this._handleRefTargetKeyData(service);
+		this._handleRefTargetKeyDataList(service);
 
 		generator.setABAPClass(this._class);
 		return generator.generate();
