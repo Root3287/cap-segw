@@ -336,7 +336,7 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 		// this._writer.decreaseIndent().writeLine(").").writeLine();
 
 		this._writer.writeLine(`" Set External EDM name for entity type`);
-		this._writer.writeLine(`entity_type->set_edm_name( |${entityNameInternal}| ).`).writeLine();
+		this._writer.writeLine(`entity_type->set_edm_name( |${entityName}| ).`).writeLine();
 
 		this._writeElements();
 
