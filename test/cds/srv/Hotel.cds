@@ -5,11 +5,15 @@ service Hotel {
 	entity Locations as projection on Hotel.Location actions {
 		// function getAverageRating() returns Decimal;
 
+		@segw.name: 'pend_cust_day'
 		@segw.abap.name: 'pend_cust_day'
 		function getPendingCustomersForDay(day: Date) returns array of Hotel.Customers;
 
+		@segw.name: 'pend_resv_day'
 		@segw.abap.name: 'pend_resv_day'
 		function getPendingReservationForDay(day: Date) returns array of Hotel.Reservations;
+		
+		@segw.name: 'loc_resv'
 		function getReservations() returns array of Hotel.Reservations;
 	};
 

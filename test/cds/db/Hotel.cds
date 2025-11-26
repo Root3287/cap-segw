@@ -17,7 +17,8 @@ type Address {
 	region: String;
 	postal: String;
 
-	country_code: String(3) not null;
+	// country_code: String(3) not null;
+	@segw.association.fix
 	country: Country;
 }
 
