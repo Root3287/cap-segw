@@ -249,8 +249,8 @@ export default class CDSTypeConverter implements IFABAPTypeGenerator {
 
 		let abapStructure: ABAP.Structure = { name: typeName, parameters: [] };
 		const namespace = Object.keys(this._csdl)[3];
-
-		const entityCSDL = this._csdl[namespace]?.[name.replace(/\./, '_')];
+		const csnName = entity.name.substring(namespace.length+1);
+		const entityCSDL = this._csdl[namespace]?.[csnName.replace(/\./g, '_')];
 
 		let copyCDS2CSDL = (elementName: string, cds: any) =>{
 			if(!entityCSDL?.[elementName]) return;
