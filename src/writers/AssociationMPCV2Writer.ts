@@ -61,23 +61,36 @@ export default class AssociationMPCV2Writer implements IFCodeGenerator {
 				this._writer.writeLine(`iv_def_assoc_set = abap_false`);
 			this._writer.decreaseIndent().writeLine(`).`);
 
-			// Create the Contraints
-			// TODO: Handle many constraints
+			// Create the constraints
+			const writeConstraint = (principal: string, dependent: string) => {
+				this._writer.writeLine(`ref_constraint = association->create_ref_constraint( ).`);
+				this._writer.writeLine(`ref_constraint->add_property(`).increaseIndent();
+				this._writer.writeLine(`iv_principal_property = '${principal}'`);
+				this._writer.writeLine(`iv_dependent_property = '${dependent}'`);
+				this._writer.decreaseIndent().writeLine(`).`);
+			};
+
 			if(association?.foreignKeys){
-				this._writer.writeLine(`ref_constraint = association->create_ref_constraint( ).`);
-				this._writer.writeLine(`ref_constraint->add_property(`).increaseIndent();
-				this._writer.writeLine(`iv_principal_property = '${association.name}'`);
-				this._writer.writeLine(`iv_dependent_property = '${(<any>Object.values(association?.foreignKeys)?.[0])?.name}'`);
-				this._writer.decreaseIndent().writeLine(`).`);
-			}
-			if(association?.on){
-				let principalProperty = association.on[0].ref.slice(1).join('.');
-				let dependentProperty = association.on[2].ref.filter((item: string) => item !== "$self")[0];
-				this._writer.writeLine(`ref_constraint = association->create_ref_constraint( ).`);
-				this._writer.writeLine(`ref_constraint->add_property(`).increaseIndent();
-				this._writer.writeLine(`iv_principal_property = '${principalProperty}'`);
-				this._writer.writeLine(`iv_dependent_property = '${dependentProperty}'`);
-				this._writer.decreaseIndent().writeLine(`).`);
+				Object.entries(association.foreignKeys).forEach(([, fk]) => {
+					writeConstraint(association.name, (<any>fk)?.name ?? "");
+				});
+			} else if(Array.isArray(association?.on)){
+				// Handle simple "X = $self.Y" pairs; ignore complex boolean expressions
+				const pairs: Array<[string, string]> = [];
+				const clauses = association.on;
+				for(let i = 0; i < clauses.length - 2; i++){
+					if(clauses[i + 1] !== "=") continue;
+					const left = clauses[i];
+					const right = clauses[i + 2];
+					if(!left?.ref || !right?.ref) continue;
+					const principalRef = (left.ref ?? []).filter((r: string) => r !== "$self");
+					const dependentRef = (right.ref ?? []).filter((r: string) => r !== "$self");
+					if(principalRef.length && dependentRef.length){
+						pairs.push([principalRef.join('.'), dependentRef.join('.')]);
+					}
+				}
+
+				pairs.forEach(([principal, dependent]: [string, string]) => writeConstraint(principal, dependent));
 			}
 
 			// Create Association Set
@@ -108,7 +121,9 @@ export default class AssociationMPCV2Writer implements IFCodeGenerator {
 		for(let association of this._associations){
 			let propertyName = association?.["@segw.name"] ?? association.name;
 			let abapName = association?.["@segw.abap.name"] ?? association.name;
-			let associationName = visitedNodes.find(node => node.parent === association.parent)?.assocationName;
+			let associationName = visitedNodes.find(
+				node => node.parent === association.parent && node.target === association._target
+			)?.assocationName;
 			this._writer.writeLine(`entity_type = model->get_entity_type( iv_entity_name = '${ABAPUtils.getABAPName(association.parent)}' ).`);
 			this._writer.writeLine(`nav_property = entity_type->create_navigation_property(`).increaseIndent();
 			this._writer.writeLine(`iv_property_name = '${propertyName}'`);
