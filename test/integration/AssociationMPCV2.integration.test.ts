@@ -1,5 +1,5 @@
 import cds from "@sap/cds";
-import segwCompiler from "../src";
+import segwCompiler from "../../src";
 
 describe("Integration: AssociationMPCV2Writer", () => {
 	test("emits constraints for multiple on-clause pairs and correct association names", () => {
@@ -25,8 +25,8 @@ describe("Integration: AssociationMPCV2Writer", () => {
 		const mpc = outputs.find(([, meta]) => meta.file.includes("_MPC"))?.[0] as string;
 		expect(mpc).toBeTruthy();
 
-		// Association name is derived from parent/target
-		expect(mpc).toContain("iv_association_name = |AssocService.Parent_AssocService.Child|");
+		// Association name is derived from child entity (owner) and target
+		expect(mpc).toContain("iv_association_name = |Child_Parent|");
 
 		// Two constraints emitted from the two equality pairs
 		const constraintCount = (mpc.match(/ref_constraint->add_property/g) ?? []).length;
@@ -39,6 +39,6 @@ describe("Integration: AssociationMPCV2Writer", () => {
 		expect(mpc).toContain("iv_dependent_property = 'client'");
 
 		// Navigation property uses the association name for this parent/target pair
-		expect(mpc).toContain("iv_association_name = 'AssocService.Parent_AssocService.Child'");
+		expect(mpc).toContain("iv_association_name = 'Child_Parent'");
 	});
 });

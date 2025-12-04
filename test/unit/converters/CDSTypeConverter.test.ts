@@ -1,6 +1,6 @@
-import CDSTypeConverter from "../../src/converters/CDSTypeConverter";
-import * as ABAP from "../../src/types/abap";
-import * as CDS from "../../src/types/cds";
+import CDSTypeConverter from "../../../src/converters/CDSTypeConverter";
+import * as ABAP from "../../../src/types/abap";
+import * as CDS from "../../../src/types/cds";
 
 /** Helpers */
 const findStructure = (

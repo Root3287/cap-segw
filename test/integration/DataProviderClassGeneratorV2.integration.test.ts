@@ -1,5 +1,5 @@
 import cds from "@sap/cds";
-import segwCompiler from "../src";
+import segwCompiler from "../../src";
 
 describe("Integration: Data Provider class generation V2", () => {
 	test("OData V2 data provider emits CRUD and action stubs", () => {

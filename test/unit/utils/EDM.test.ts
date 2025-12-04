@@ -1,6 +1,6 @@
-import { EDM } from "../../src/utils/EDM";
-import { Primitive as EDMPrimitive } from "../../src/types/edm";
-import { Primitive as ABAPPrimitive } from "../../src/types/abap";
+import { EDM } from "../../../src/utils/EDM";
+import { Primitive as EDMPrimitive } from "../../../src/types/edm";
+import { Primitive as ABAPPrimitive } from "../../../src/types/abap";
 
 describe("EDM utils", () => {
 	describe("edm2abap()", () => {

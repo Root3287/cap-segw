@@ -1,5 +1,5 @@
 import cds from "@sap/cds";
-import segwCompiler from "../src";
+import segwCompiler from "../../src";
 
 	describe("Integration: CAP -> SEGW ABAP generation", () => {
 		test("Hotel service produces MPC and DPC classes with expected names", async () => {

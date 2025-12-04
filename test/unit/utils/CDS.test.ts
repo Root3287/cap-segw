@@ -1,7 +1,7 @@
-import { CDS } from "../../src/utils/CDS";
-import { Primitive as CDSPrimitive } from "../../src/types/cds";
-import { Primitive as ABAPPrimitive } from "../../src/types/abap";
-import { Primitive as EDMPrimitive } from "../../src/types/edm";
+import { CDS } from "../../../src/utils/CDS";
+import { Primitive as CDSPrimitive } from "../../../src/types/cds";
+import { Primitive as ABAPPrimitive } from "../../../src/types/abap";
+import { Primitive as EDMPrimitive } from "../../../src/types/edm";
 
 describe("CDS utils", () => {
 	describe("cds2abap()", () => {

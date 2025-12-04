@@ -1,5 +1,5 @@
 import cds from "@sap/cds";
-import segwCompiler from "../src";
+import segwCompiler from "../../src";
 
 describe("Integration: Data Provider class generation V4", () => {
 	test("OData V4 data provider redefines CRUDQ and action handlers", () => {

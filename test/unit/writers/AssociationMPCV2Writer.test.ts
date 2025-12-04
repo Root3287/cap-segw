@@ -1,4 +1,4 @@
-import AssociationMPCV2Writer from "../../src/writers/AssociationMPCV2Writer";
+import AssociationMPCV2Writer from "../../../src/writers/AssociationMPCV2Writer";
 
 describe("AssociationMPCV2Writer", () => {
 	test("emits nav properties per association and creates constraints for FK or on-clause", () => {

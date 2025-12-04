@@ -1,4 +1,4 @@
-import { ABAP } from "../../src/utils/ABAP";
+import { ABAP } from "../../../src/utils/ABAP";
 
 describe("ABAP utils", () => {
 	describe("getABAPName()", () => {

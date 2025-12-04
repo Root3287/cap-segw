@@ -1,6 +1,6 @@
 import cds from "@sap/cds";
-import CDSTypeConverter from "../src/converters/CDSV4TypeConverter";
-import * as ABAP from "../src/types/abap";
+import CDSTypeConverter from "../../src/converters/CDSV4TypeConverter";
+import * as ABAP from "../../src/types/abap";
 
 const findStructure = (
 	types: Array<ABAP.Structure | ABAP.Parameter | ABAP.Table>,

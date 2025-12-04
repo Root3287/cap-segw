@@ -1,5 +1,5 @@
-import { getCardinality, getCardinalityPair, inferCardinality } from "../../src/utils/Cardinality";
-import { Cardinality } from "../../src/types/abap";
+import { getCardinality, getCardinalityPair, inferCardinality } from "../../../src/utils/Cardinality";
+import { Cardinality } from "../../../src/types/abap";
 
 type Assoc = { is2one?: boolean; is2many?: boolean; notNull?: boolean } | undefined;
 

@@ -1,5 +1,5 @@
 import cds from "@sap/cds";
-import segwCompiler from "../src";
+import segwCompiler from "../../src";
 
 describe("Integration: CAP -> SEGW MPC V4 generation", () => {
 	test("Application service generates V4 MPC metadata", () => {
