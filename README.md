@@ -89,7 +89,7 @@ npm link cap-segw
 ### In-Repository Tests
 
 ```
-export PATH=$(pwd)/node_modules/.bin
+export PATH=$PATH:$(pwd)/node_modules/.bin
 mkdir node_modules/@root3287 && ln -s . node_modules/@root3287/cap-segw
 ```
 
