@@ -203,7 +203,9 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 				"model",
 				"definitions",
 				operation.csdl["$ReturnType"]["$Type"]
-			].reduce((acc: any, curr: any) => acc[curr], this._compilerInfo?.csn)
+			].reduce((acc: any, curr: any) => acc?.[curr], this._compilerInfo?.csn)
+				?? this._compilerInfo?.csn?.definitions?.[operation.csdl["$ReturnType"]["$Type"]];
+			if(!complexType) return;
 			let internalComplexTypeName = ABAPUtils.getABAPName(complexType).replace(/\./,'_').toUpperCase();
 			this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_return->set_complex_type( '${internalComplexTypeName}' ).`)
 		}else if(returnType["$Kind"] === "EntityType"){
@@ -212,7 +214,9 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 				namespace,
 				"entities",
 				operation.csdl["$ReturnType"]["$Type"].split(".").slice(namespace.split('.').length).join('.')
-			].reduce((acc: any, curr: any) => acc[curr], this._compilerInfo?.csn);
+			].reduce((acc: any, curr: any) => acc?.[curr], this._compilerInfo?.csn);
+			returnEntityCSN ??= this._compilerInfo?.csn?.definitions?.[operation.csdl["$ReturnType"]["$Type"]];
+			if(!returnEntityCSN) return;
 
 			let returnEntityName = ABAPUtils.getABAPName(returnEntityCSN).toUpperCase();
 			this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_return->set_entity_type( '${returnEntityName}' ).`);
