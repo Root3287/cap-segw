@@ -8,11 +8,16 @@ export default interface IFServiceClassGenerator extends IFCodeGenerator {
 	 * @param {CompilerInfo} compilerInfo Frontend compiler information
 	 */
 	setCompilerInfo(compilerInfo: CompilerInfo): void;
+
+	/**
+	 * Resolve the service from CSN/CSDL metadata
+	 */
+	getService(): any;
 	
 	/**
 	 * Get Filename
 	 */
-	getFileName(): void;
+	getFileName(): string;
 
 	/**
 	 * Add an entity to be process

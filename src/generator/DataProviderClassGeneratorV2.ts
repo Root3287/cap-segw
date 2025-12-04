@@ -63,15 +63,29 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 	}
 
 	/**
+	 * Get the CDS service used for generation
+	 */
+	public getService(): any | undefined {
+		const csdl: Record<string, any> = (this._compilerInfo as any)?.csdl ?? {};
+		const schemaKey = Object.keys(csdl).find((k) => !k.startsWith("$"));
+		const services: Record<string, any> = (this._compilerInfo?.csn as any)?.services ?? {};
+		if (schemaKey && services[schemaKey]) {
+			return services[schemaKey];
+		}
+		const first = Object.keys(services)[0];
+		return services[first];
+	}
+	
+	/**
 	 * Get Class File Name
 	 * @return {string} Filename of the class
 	 */
 	public getFileName(): string { 
-		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
-		const service = this._compilerInfo?.csn.services[namespace];
-		if(!service) return `ZCL_${ABAPUtils.getABAPName(namespace)}_DPC.abap`;
+		const service = this.getService();
+		if(!service) return `ZCL_${ABAPUtils.getABAPName("SERVICE")}_DPC.abap`;
 		if((<any>service)?.["@segw.name"]) return `ZCL_${(<any>service)?.["@segw.name"]}_DPC.abap`;
-		return `ZCL_${ABAPUtils.getABAPName(service.name.split('.').at(-1))}_DPC.abap`;
+		const serviceLabel = service?.name?.split('.').at(-1) ?? "SERVICE";
+		return `ZCL_${ABAPUtils.getABAPName(serviceLabel)}_DPC.abap`;
 	}
 
 	/**
@@ -81,9 +95,9 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 	public addEntity(entity: entity): void {
 		let entityName = ABAPUtils.getABAPName(entity);
 
-		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
-		const service = this._compilerInfo?.csn.services[namespace];
-		let entityReturnType = `ZCL_${ABAPUtils.getABAPName(service)}_MPC=>T_${entityName}`;
+		const service = this.getService();
+		const serviceLabel = service?.name?.split(".").at(-1) ?? "SERVICE";
+		let entityReturnType = `ZCL_${ABAPUtils.getABAPName(serviceLabel)}_MPC=>T_${entityName}`;
 		
 		if(entityName.length > 30){
 			LOG.warn(`Method ${entityName} too long. Consider shortening it with @segw.name`);
@@ -106,8 +120,7 @@ export default class DataProviderClassGeneratorV2 implements IFServiceClassGener
 	 * @return {string} ABAP Class
 	 */
 	public generate(): string {
-		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
-		const service = this._compilerInfo?.csn.services[namespace];
+		const service = this.getService();
 		let generator = new ABAPGenerator();
 
 		this._class.name = this.getFileName().split('.')[0];

@@ -55,12 +55,26 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 		this._compilerInfo = compilerInfo;
 	}
 
+	/**
+	 * Get the CDS service used for generation
+	 */
+	public getService(): any | undefined {
+		const csdl: Record<string, any> = (this._compilerInfo as any)?.csdl ?? {};
+		const schemaKey = Object.keys(csdl).find((k) => !k.startsWith("$"));
+		const services: Record<string, any> = (this._compilerInfo?.csn as any)?.services ?? {};
+		if (schemaKey && services[schemaKey]) {
+			return services[schemaKey];
+		}
+		const first = Object.keys(services)[0];
+		return services[first];
+	}
+
 	public getFileName(): string { 
-		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
-		const service = this._compilerInfo?.csn.services[namespace];
-		if(!service) return `ZCL_${ABAPUtils.getABAPName(namespace)}_MPC.abap`;
+		const service = this.getService();
+		if(!service) return `ZCL_${ABAPUtils.getABAPName("SERVICE")}_MPC.abap`;
 		if((<any>service)?.["@segw.name"]) return `ZCL_${(<any>service)?.["@segw.name"]}_MPC.abap`;
-		return `ZCL_${ABAPUtils.getABAPName(service.name.split('.').at(-1))}_MPC.abap`;
+		const serviceLabel = service?.name?.split('.').at(-1) ?? "SERVICE";
+		return `ZCL_${ABAPUtils.getABAPName(serviceLabel)}_MPC.abap`;
 	}
 
 	public addEntity(entity: entity): void {
@@ -107,8 +121,8 @@ export default class ModelProviderClassGeneratorV4 implements IFServiceClassGene
 	};
 
 	public generate(): string {
-		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
-		const service = this._compilerInfo?.csn.services[namespace];
+		const service = this.getService();
+		const namespace = service?.name ?? "";
 		let generator = new ABAPGenerator();
 
 		this._class.name = this.getFileName().split('.')[0];
