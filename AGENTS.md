@@ -21,6 +21,7 @@
 - Jest with `ts-jest` powers unit and integration tests; place new specs alongside the area they cover under `test/`.
 - Name tests after the unit under test (`ABAPGenerator.test.ts`) and use CAP fixture projects in `test/cds/` when exercising end-to-end generation.
 - Always run `npm test` before opening a PR; add focused cases when changing generation logic or CDS/EDM conversions.
+- Folder `test/cds` is used for manual testing. Pefer to use inline CDS definitions in test files.
 
 ## Commit & Pull Request Guidelines
 - Commit messages follow a Conventional Commit style seen in history (`fix: ...`, `refactor(scope): ...`, `chore: ...`, `test: ...`).
