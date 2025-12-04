@@ -23,7 +23,8 @@
   },
   "files": [
     "dist",
-    "cds-plugin.js"
+    "cds-plugin.js",
+    "src"
   ],
   "scripts": {
     "build": "tsc",
