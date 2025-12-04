@@ -242,9 +242,11 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 				namespace, 
 				"entities", 
 				element?.["target"].substring(namespace.length+1)
-			].reduce((acc: any, curr: any) => acc[curr], this._compilerInfo?.csn),
+			].reduce((acc: any, curr: any) => acc?.[curr], this._compilerInfo?.csn),
 			csdl: this._compilerInfo?.csdl?.[namespace]?.[targetTypeQName],
 		};
+
+		if(!target?.csn || !target?.csdl) return;
 
 		const targetInternal = ABAPUtils.getABAPName(target.csn).replace(/\./g, '_').toUpperCase();
 
