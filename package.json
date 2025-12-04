@@ -17,6 +17,7 @@
   "author": "Timothy Gibbons",
   "type": "commonjs",
   "main": "cds-plugin.js",
+  "types": "dist/index.d.ts",
   "directories": {
     "test": "test"
   },
