@@ -142,6 +142,7 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 		let generator = new ABAPGenerator();
 
 		this._class.name = this.getFileName().split('.')[0];
+		const generatedTimestamp = this._getGeneratedTimestamp();
 
 		let typeConverter = new CDSTypeConverter();
 		typeConverter.setService(service);
@@ -177,8 +178,7 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 			type: ABAPMethodType.MEMBER,
 			isRedefinition: true,
 			code: [
-				// TODO: UPDATE DATE TIME
-				"CONSTANTS: lc_gen_date_time TYPE timestamp VALUE '20250919151019'.",
+				`CONSTANTS: lc_gen_date_time TYPE timestamp VALUE '${generatedTimestamp}'.`,
 				"rv_last_modified = super->get_last_modified( ).",
 				"IF rv_last_modified LT lc_gen_date_time.",
 				"\trv_last_modified = lc_gen_date_time.",
@@ -188,6 +188,19 @@ export default class ModelProviderClassGeneratorV2 implements IFServiceClassGene
 
 		generator.setABAPClass(this._class);
 		return generator.generate();
+	}
+
+	private _getGeneratedTimestamp(): string {
+		const now = new Date();
+		const pad = (n: number) => n.toString().padStart(2, "0");
+		return [
+			now.getUTCFullYear().toString(),
+			pad(now.getUTCMonth() + 1),
+			pad(now.getUTCDate()),
+			pad(now.getUTCHours()),
+			pad(now.getUTCMinutes()),
+			pad(now.getUTCSeconds())
+		].join("");
 	}
 
 	/**
