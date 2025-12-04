@@ -55,7 +55,7 @@ describe("CodeWriter", () => {
 
 	test("Should Indent Multiple", () => {
 		writer.writeLine("Hello");
-		const numLines = Math.floor(10 * Math.random());
+		const numLines = Math.max(1, Math.floor(10 * Math.random()));
 		for(let i = 1; i < numLines+1; i++){
 			writer.increaseIndent();
 		}

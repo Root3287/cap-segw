@@ -36,7 +36,7 @@ describe("CDS utils", () => {
 
 	describe("cds2edm()", () => {
 		test.each([
-			[CDSPrimitive.UUID,        EDMPrimitive.GUID],
+			[CDSPrimitive.UUID,        EDMPrimitive.Guid],
 			[CDSPrimitive.Boolean,     EDMPrimitive.Boolean],
 			[CDSPrimitive.Integer,     EDMPrimitive.Int32],   // per implementation choice
 			[CDSPrimitive.Int16,       EDMPrimitive.Int16],
@@ -47,10 +47,9 @@ describe("CDS utils", () => {
 			[CDSPrimitive.Double,      EDMPrimitive.Double],
 			[CDSPrimitive.Date,        EDMPrimitive.Date],
 			[CDSPrimitive.Time,        EDMPrimitive.Time],
-			// Intentional fall-through in implementation:
-			// DateTime sets DateTime, then falls through to Timestamp (no break)
-			[CDSPrimitive.DateTime,    EDMPrimitive.Timestamp],
-			[CDSPrimitive.Timestamp,   EDMPrimitive.Timestamp],
+			// Implementation falls through to DateTimeOffset for both DateTime and Timestamp
+			[CDSPrimitive.DateTime,    EDMPrimitive.DateTimeOffset],
+			[CDSPrimitive.Timestamp,   EDMPrimitive.DateTimeOffset],
 			[CDSPrimitive.String,      EDMPrimitive.String],
 			[CDSPrimitive.LargeString, EDMPrimitive.String],
 			[CDSPrimitive.Binary,      EDMPrimitive.Binary],
@@ -63,8 +62,8 @@ describe("CDS utils", () => {
 			expect(CDS.cds2edm(-1 as unknown as CDSPrimitive)).toBeNull();
 		});
 
-		test("DateTime specifically maps to Timestamp due to fall-through", () => {
-			expect(CDS.cds2edm(CDSPrimitive.DateTime)).toBe(EDMPrimitive.Timestamp);
+		test("DateTime specifically maps to DateTimeOffset due to fall-through", () => {
+			expect(CDS.cds2edm(CDSPrimitive.DateTime)).toBe(EDMPrimitive.DateTimeOffset);
 		});
 	});
 });

@@ -19,8 +19,13 @@ describe("ABAP utils", () => {
 			expect(ABAP.getABAPName(def)).toBe("ZCLASS");
 		});
 
-		test("object with name containing dots: returns last segment", () => {
+		test("object with name containing dots: returns name as-is when no service context", () => {
 			const def = { name: "com.example.project.ZFOO" };
+			expect(ABAP.getABAPName(def)).toBe("com.example.project.ZFOO");
+		});
+
+		test("object with _service drops the service prefix", () => {
+			const def = { name: "com.example.project.ZFOO", _service: { name: "com.example.project" } };
 			expect(ABAP.getABAPName(def)).toBe("ZFOO");
 		});
 
