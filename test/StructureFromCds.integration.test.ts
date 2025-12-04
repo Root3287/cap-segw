@@ -1,4 +1,3 @@
-import path from "path";
 import cds from "@sap/cds";
 import CDSTypeConverter from "../src/converters/CDSV4TypeConverter";
 import * as ABAP from "../src/types/abap";
@@ -20,8 +19,65 @@ const findParam = (s: ABAP.Structure | undefined, pname: string) =>
 
 describe("Integration: ABAP type generation from CDS", () => {
 	test("Hotel service entities and complex types emit expected ABAP structures", async () => {
-		const modelRoot = path.join(__dirname, "cds");
-		const csn = await cds.load(["srv/Hotel.cds"], { root: modelRoot });
+			const hotelCds = `
+			type Address {
+				street_1: String;
+				street_2: String;
+				city: String;
+				@segw.abap.type: 'regio'
+				region: String;
+				postal: String;
+			};
+
+			entity Location {
+				key ID: UUID;
+				createdAt: Timestamp;
+				createdBy: String;
+				modifiedAt: Timestamp;
+				modifiedBy: String;
+				address: Address;
+			};
+
+			entity Customer {
+				key ID: UUID;
+				name: String;
+				billingAddress: Address;
+			};
+
+			entity Reservation {
+				key ID: UUID;
+				createdAt: Timestamp;
+				createdBy: String;
+				modifiedAt: Timestamp;
+				modifiedBy: String;
+				@readonly
+				status: String enum {
+					DRAFT;
+					RESERVED;
+					IN_PROGRESS;
+					COMPLETED;
+				};
+				customer: Association to Customer;
+			};
+
+			@segw.name: 'ZODATAV4_TEST_TIM_01'
+			service Hotel {
+				entity Locations as projection on Location actions {
+					function getPendingCustomersForDay(day: Date) returns array of Customers;
+					function getReservations() returns array of Reservations;
+				};
+				entity Customers as projection on Customer;
+				entity Reservations as projection on Reservation actions {
+					action submit() returns Reservations;
+					action cancel(reason: String) returns Reservations;
+				};
+				function getNearestHotel(address: Address) returns Locations;
+				function getTopLocations(count: Integer) returns array of Locations;
+				action process() returns Address;
+			};
+		`;
+
+		const csn = cds.parse.cdl(hotelCds);
 		const csdl = cds.compile.to.edm(csn, { odataOpenapiHints: true, edm4OpenAPI: true, to: "openapi" });
 		const linked = cds.linked(csn);
 		const service = linked.services.find((s: any) => s.name === "Hotel");
