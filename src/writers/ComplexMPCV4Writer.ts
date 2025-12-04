@@ -245,7 +245,10 @@ export default class ComplexMPCV4Writer implements IFCodeGenerator {
 				"model",
 				"definitions",
 				`${namespace}.${complexTypeName}`
-			].reduce((arr: any, curr: any) => arr[curr], this._compilerInfo?.csn);
+			].reduce((arr: any, curr: any) => arr?.[curr], this._compilerInfo?.csn);
+			// Fallback to definitions when model metadata is not present (e.g. inline parsed CSN)
+			complexTypeCSN ??= this._compilerInfo?.csn?.definitions?.[`${namespace}.${complexTypeName}`] ?? this._compilerInfo?.csn?.definitions?.[complexTypeName];
+			if(!complexTypeCSN?.elements) continue;
 
 			let copyCDS2CSDL = (elementName: string, cds: any) =>{
 				if(!(<any>complexType)?.[elementName]) return;
