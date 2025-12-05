@@ -4,6 +4,8 @@
     "module": "commonjs",                       // For modern Node module resolution
     "outDir": "./dist",                         // Where compiled files go
     "rootDir": "./src",                         // Where your source files live
+    "declaration": true,                        // Emit .d.ts files for consumers
+    "declarationDir": "./dist",                 // Keep declarations alongside build output
     "strict": true,                             // Enable all strict type checks
     "esModuleInterop": true,                    // Better interop with CommonJS modules
     "forceConsistentCasingInFileNames": true,

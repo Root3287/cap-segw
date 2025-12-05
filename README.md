@@ -13,6 +13,34 @@ This plugin allows developers to design and maintain their data models in CAP CD
 - Allows custom annotations to control ABAP output generation.
 - Extensible design for future SEGW enhancements and ABAP compatibility layers.
 
+## Annotations
+
+Since there are some annotations that are not present in CDS but can be set on SEGW, we added some annotations.
+
+
+|          Annotation        |                 Description              |     Type     |
+|----------------------------|------------------------------------------|--------------|
+| `@segw.name`               | Set the name of the component            |   `string`   |
+| `@segw.ignore`			 | Ignores an element 						|   `boolean`  |
+| `@segw.sortable`           | Enable Sortable                          |   `boolean`  |
+| `@segw.filterable`         | Enabled Filterable                       |   `boolean`  |
+| `@segw.conversion`         | ABAP Field Conversions                   |   `boolean`  |
+| `@segw.pageable`           | Pagination                               |   `boolean`  |
+| `@segw.addressable`	     | Addressable                              |   `boolean`  |
+| `@segw.ftxt_search`        | Filter Text Search                       |   `boolean`  |
+| `@segw.subscribable`       | Allows to be subscribable                |   `boolean`  |
+| `@segw.filter_required`    | Filtered is required                     |   `boolean`  |
+| `@segw.expand`			 | Expand Complex Types						| 	`boolean`  |
+| `@segw.abap.name`          | ABAP Field Name Override                 |   `string`   |
+| `@segw.abap.type`          | ABAP DDIC Type                           |   `string`   |
+| `@segw.abap.multiplicity`	 | Override multiplicity for SEGW 			|   `string`   | 
+| `@segw.mpc.define.name`    | MPC Define Entity Method Name            |   `string`   |
+| `@segw.set.name`           | Set the name of Entity/Association Set   |   `string`   |
+| `@segw.association.name`   | Set the name of the association          |   `string`   |
+| `@segw.association.ignore` | Ignore the parent side of an association |   `boolean`  |
+| `@segw.action.method`		 | Set the HTTP method for Action (ODATAV2) |   `string`   | 
+
+
 ## Installation
 ```
 npm install @root3287/cap-segw
@@ -35,6 +63,9 @@ cds compile srv -s all --to segw
 3. Run `cds compile --to segw` to generate ABAP classes.
 4. Copy or deploy the generated .abap files into your ABAP system for SEGW integration.
 
+By default this will generate an ODataV4 classes.
+To switch to ODataV2 run with `--odata-version 2` parameter.
+
 ## Development
 
 ```
@@ -53,6 +84,13 @@ npm link
 # install locally
 cd /path/to/your-cap-project
 npm link cap-segw
+```
+
+### In-Repository Tests
+
+```
+export PATH=$PATH:$(pwd)/node_modules/.bin
+mkdir node_modules/@root3287 && ln -s . node_modules/@root3287/cap-segw
 ```
 
 ## License
