@@ -53,7 +53,7 @@ publish_dryrun:
 
 publish:
   stage: publish
-  needs: ["publish_dryrun"]
+  needs: ["publish_dryrun", "build"]
   rules:
     - if: '$CI_COMMIT_TAG'
   dependencies:
@@ -111,7 +111,7 @@ github_status_failure:
 
 gitlab_release:
   stage: notify
-  needs: ["publish_gitlab"]
+  needs: ["publish_gitlab", "build"]
   rules:
     - if: '$CI_COMMIT_TAG'
   script:
@@ -139,7 +139,7 @@ gitlab_release:
 
 github_release:
   stage: notify
-  needs: ["publish_gitlab"]
+  needs: ["publish_gitlab", "build"]
   rules:
     - if: '$CI_COMMIT_TAG && $GITHUB_REPO'
   script:
