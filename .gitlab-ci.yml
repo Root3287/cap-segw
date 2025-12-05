@@ -74,12 +74,11 @@ publish:
 
 publish_gitlab:
   stage: publish
-  needs: ["build"]
+  needs: ["build", "publish"]
   rules:
     - if: '$CI_COMMIT_TAG'
   dependencies:
     - build
-  when: manual
   script:
     - echo "@root3287:registry=${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/npm/" > .npmrc
     - echo "//${CI_SERVER_HOST}/api/v4/projects/${CI_PROJECT_ID}/packages/npm/:_authToken=${CI_JOB_TOKEN}" >> .npmrc
@@ -168,9 +167,11 @@ github_release:
         "https://api.github.com/repos/${GITHUB_REPO}/releases" \
         -d "${PAYLOAD}"
       )
-      UPLOAD_URL=$(echo "$RELEASE_JSON" | grep -oE '"upload_url": "[^"]+"' | cut -d':' -f2- | tr -d '"' | sed 's/{?name,label}//')
-      UPLOAD_URL="$UPLOAD_URL##*( )"
-      UPLOAD_URL="$UPLOAD_URL%%*( )"
+      UPLOAD_URL=$(echo "$RELEASE_JSON" \
+        | grep -oE '"upload_url": *"[^"]+"' \
+        | cut -d':' -f2- \
+        | tr -d '\"[:space:]' \
+        | sed 's/{?name,label}//')
       curl -sS -X POST \
         -H "Authorization: Bearer ${GITHUB_CI_TOKEN}" \
         -H "Content-Type: application/gzip" \
