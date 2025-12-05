@@ -23,12 +23,20 @@ before_script:
 
 test:
   stage: test
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_TAG'
+    - if: '$CI_COMMIT_BRANCH'
   script:
     - npm test
 
 build:
   stage: build
   needs: ["test"]
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_TAG'
+    - if: '$CI_COMMIT_BRANCH'
   script:
     - npm run build
     - mkdir -p artifacts
