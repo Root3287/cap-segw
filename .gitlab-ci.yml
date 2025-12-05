@@ -161,17 +161,7 @@ github_release:
       set -e
       echo "Creating GitHub release for ${CI_COMMIT_TAG} and uploading package"
       PKG_PATH=$(ls artifacts/*.tgz | head -n1)
-      PAYLOAD=$(cat <<EOF
-{
-  "tag_name": "${CI_COMMIT_TAG}",
-  "name": "${CI_COMMIT_TAG}",
-  "body": "Released via GitLab CI pipeline ${CI_PIPELINE_URL}",
-  "target_commitish": "${CI_COMMIT_SHA}",
-  "draft": false,
-  "prerelease": false
-}
-EOF
-)
+      PAYLOAD=$(printf '{"tag_name":"%s","name":"%s","body":"Released via GitLab CI pipeline %s","target_commitish":"%s","draft":false,"prerelease":false}' "${CI_COMMIT_TAG}" "${CI_COMMIT_TAG}" "${CI_PIPELINE_URL}" "${CI_COMMIT_SHA}")
       RELEASE_JSON=$(curl -sS -X POST \
         -H "Authorization: Bearer ${GITHUB_CI_TOKEN}" \
         -H "Accept: application/vnd.github+json" \
