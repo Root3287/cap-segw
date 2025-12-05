@@ -168,7 +168,9 @@ github_release:
         "https://api.github.com/repos/${GITHUB_REPO}/releases" \
         -d "${PAYLOAD}"
       )
-      UPLOAD_URL=$(echo "$RELEASE_JSON" | grep -oE '"upload_url":"[^"]+"' | cut -d':' -f2- | tr -d '"' | sed 's/{?name,label}//')
+      UPLOAD_URL=$(echo "$RELEASE_JSON" | grep -oE '"upload_url": "[^"]+"' | cut -d':' -f2- | tr -d '"' | sed 's/{?name,label}//')
+      UPLOAD_URL="$UPLOAD_URL##*( )"
+      UPLOAD_URL="$UPLOAD_URL%%*( )"
       curl -sS -X POST \
         -H "Authorization: Bearer ${GITHUB_CI_TOKEN}" \
         -H "Content-Type: application/gzip" \
