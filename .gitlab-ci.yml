@@ -50,8 +50,6 @@ publish_dryrun:
     - npm pack --dry-run
   artifacts:
     paths: []
-  only:
-    - tags
 
 publish:
   stage: publish
@@ -65,8 +63,6 @@ publish:
     - echo "Manual publish to npm disabled in CI (Trust Publishers). Run locally with your NPM_TOKEN."
   artifacts:
     paths: []
-  only:
-    - tags
 
 publish_gitlab:
   stage: publish
@@ -82,8 +78,6 @@ publish_gitlab:
     - npm publish
   artifacts:
     paths: []
-  only:
-    - tags
 
 github_status:
   stage: notify
@@ -142,8 +136,6 @@ gitlab_release:
   artifacts:
     paths:
       - artifacts/
-  only:
-    - tags
 
 github_release:
   stage: notify
