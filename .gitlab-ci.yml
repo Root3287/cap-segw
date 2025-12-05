@@ -1,0 +1,179 @@
+image: node:25
+
+stages:
+  - test
+  - build
+  - publish
+  - notify
+
+variables:
+  NODE_ENV: test
+  NPM_CONFIG_FUND: "false"
+  NPM_CONFIG_AUDIT: "false"
+
+cache:
+  key:
+    files:
+      - package-lock.json
+  paths:
+    - node_modules/
+
+before_script:
+  - npm ci
+
+test:
+  stage: test
+  script:
+    - npm test
+
+build:
+  stage: build
+  needs: ["test"]
+  script:
+    - npm run build
+    - mkdir -p artifacts
+    - npm pack --pack-destination artifacts
+  artifacts:
+    paths:
+      - dist/
+      - artifacts/
+
+publish_dryrun:
+  stage: publish
+  needs: ["build"]
+  rules:
+    - if: '$CI_COMMIT_TAG'
+  dependencies:
+    - build
+  script:
+    # Show what would be published (no registry auth required)
+    - npm pack --dry-run
+  artifacts:
+    paths: []
+  only:
+    - tags
+
+publish:
+  stage: publish
+  needs: ["publish_dryrun"]
+  rules:
+    - if: '$CI_COMMIT_TAG'
+  dependencies:
+    - build
+  when: manual
+  script:
+    - echo "Manual publish to npm disabled in CI (Trust Publishers). Run locally with your NPM_TOKEN."
+  artifacts:
+    paths: []
+  only:
+    - tags
+
+publish_gitlab:
+  stage: publish
+  needs: ["build"]
+  rules:
+    - if: '$CI_COMMIT_TAG'
+  dependencies:
+    - build
+  when: manual
+  script:
+    - echo "@root3287:registry=${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/npm/" > .npmrc
+    - echo "//${CI_SERVER_HOST}/api/v4/projects/${CI_PROJECT_ID}/packages/npm/:_authToken=${CI_JOB_TOKEN}" >> .npmrc
+    - npm publish
+  artifacts:
+    paths: []
+  only:
+    - tags
+
+github_status:
+  stage: notify
+  needs: ["build"]
+  rules:
+    - if: '$GITHUB_REPO && $CI_COMMIT_SHA'
+  script:
+    - 'echo "Reporting status to GitHub for ${CI_COMMIT_SHA}"'
+    - >
+      curl -sS -X POST
+      -H "Authorization: Bearer ${GITHUB_CI_TOKEN}"
+      -H "Accept: application/vnd.github+json"
+      "https://api.github.com/repos/${GITHUB_REPO}/statuses/${CI_COMMIT_SHA}"
+      -d "{\"state\": \"success\", \"context\": \"gitlab-ci\", \"target_url\": \"${CI_PIPELINE_URL}\", \"description\": \"GitLab CI passed\"}"
+  when: on_success
+
+github_status_failure:
+  stage: notify
+  needs: ["build"]
+  rules:
+    - if: '$GITHUB_REPO && $CI_COMMIT_SHA'
+  script:
+    - 'echo "Reporting failure to GitHub for ${CI_COMMIT_SHA}"'
+    - >
+      curl -sS -X POST
+      -H "Authorization: Bearer ${GITHUB_CI_TOKEN}"
+      -H "Accept: application/vnd.github+json"
+      "https://api.github.com/repos/${GITHUB_REPO}/statuses/${CI_COMMIT_SHA}"
+      -d "{\"state\": \"failure\", \"context\": \"gitlab-ci\", \"target_url\": \"${CI_PIPELINE_URL}\", \"description\": \"GitLab CI failed\"}"
+  when: on_failure
+
+gitlab_release:
+  stage: notify
+  needs: ["publish_gitlab"]
+  rules:
+    - if: '$CI_COMMIT_TAG'
+  script:
+    - |
+      set -e
+      PKG_PATH=$(ls artifacts/*.tgz | head -n1)
+      echo "Uploading ${PKG_PATH} to GitLab release assets"
+      UPLOAD_JSON=$(curl -sS --request POST --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+        --form "file=@${PKG_PATH}" \
+        "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/uploads")
+      UPLOAD_URL=$(echo "$UPLOAD_JSON" | grep -oE '"url":"[^"]+"' | cut -d':' -f2- | tr -d '"')
+      FULL_URL="${CI_PROJECT_URL}${UPLOAD_URL}"
+      curl -sS --request POST \
+        --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+        "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/releases" \
+        --data-urlencode "name=${CI_COMMIT_TAG}" \
+        --data-urlencode "tag_name=${CI_COMMIT_TAG}" \
+        --data-urlencode "description=Release ${CI_COMMIT_TAG} (pipeline ${CI_PIPELINE_URL})" \
+        --data-urlencode "assets[links][][name]=$(basename "${PKG_PATH}")" \
+        --data-urlencode "assets[links][][url]=${FULL_URL}" \
+      || echo "Release may already exist; continuing"
+  artifacts:
+    paths:
+      - artifacts/
+  only:
+    - tags
+
+github_release:
+  stage: notify
+  needs: ["publish_gitlab"]
+  rules:
+    - if: '$CI_COMMIT_TAG && $GITHUB_REPO'
+  script:
+    - |
+      set -e
+      echo "Creating GitHub release for ${CI_COMMIT_TAG} and uploading package"
+      PKG_PATH=$(ls artifacts/*.tgz | head -n1)
+      RELEASE_JSON=$(curl -sS -X POST \
+        -H "Authorization: Bearer ${GITHUB_CI_TOKEN}" \
+        -H "Accept: application/vnd.github+json" \
+        "https://api.github.com/repos/${GITHUB_REPO}/releases" \
+        -d @- <<EOF
+        {
+          "tag_name": "${CI_COMMIT_TAG}",
+          "name": "${CI_COMMIT_TAG}",
+          "body": "Released via GitLab CI pipeline ${CI_PIPELINE_URL}",
+          "target_commitish": "${CI_COMMIT_SHA}",
+          "draft": false,
+          "prerelease": false
+        }
+        EOF
+      )
+      UPLOAD_URL=$(echo "$RELEASE_JSON" | grep -oE '"upload_url":"[^"]+"' | cut -d':' -f2- | tr -d '"' | sed 's/{?name,label}//')
+      curl -sS -X POST \
+        -H "Authorization: Bearer ${GITHUB_CI_TOKEN}" \
+        -H "Content-Type: application/gzip" \
+        --data-binary @"${PKG_PATH}" \
+        "${UPLOAD_URL}?name=$(basename "${PKG_PATH}")"
+  when: on_success
