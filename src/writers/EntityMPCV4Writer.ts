@@ -341,8 +341,12 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 		// this._writer.writeLine(`iv_gen_prim_props = abap_true`);
 		// this._writer.decreaseIndent().writeLine(").").writeLine();
 
+		// SEGW Doesn not support '.' in the name, for now we can replace it with '_'
+		if(entityName.includes('.')){
+			LOG.warn(`Entity ${entityName} contains characters not supported by SEGW; replaced with '_'. Set '@segw.name' to override.`);
+		}
 		this._writer.writeLine(`" Set External EDM name for entity type`);
-		this._writer.writeLine(`entity_type->set_edm_name( |${entityName}| ).`).writeLine();
+		this._writer.writeLine(`entity_type->set_edm_name( |${entityNameInternal}| ).`).writeLine();
 
 		this._writeElements();
 
