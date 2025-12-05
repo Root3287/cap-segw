@@ -9,10 +9,6 @@
     "ODataV4",
     "SAP"
   ],
-  "repository": {
-    "type": "git",
-    "url": "git@git-ssh.root3287.site:Root3287/cap-segw.git"
-  },
   "license": "Apache-2.0",
   "author": "Timothy Gibbons",
   "type": "commonjs",
