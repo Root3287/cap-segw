@@ -112,8 +112,10 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 		let primitive = CDSUtils.cds2edm((<any>element.type));
 		let elementPrototype = Object.getPrototypeOf(element);
 
-		let elementName = ABAPUtils.getABAPName(element.name).replace(/\./g, '_');
-		let elementNameInternal = ABAPUtils.getABAPName(element.name).toUpperCase();
+		const elementEdmName = (<any>element)?.["@segw.name"] ?? element.name;
+		const elementAbapName = (<any>element)?.["@segw.abap.name"] ?? ABAPUtils.getABAPName(elementEdmName);
+		let elementName = elementEdmName.replace(/\./g, '_');
+		let elementNameInternal = elementAbapName.replace(/\./g, '_').toUpperCase();
 
 		if(primitive || CDSUtils.cds2edm(elementPrototype.type)){
 			this._writer.writeLine(`primitive_property = entity_type->create_prim_property( '${elementNameInternal}' ).`);
@@ -172,11 +174,12 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 
 		let kind = element["$Kind"] ?? EDMPrimitive.String;
 
+		const edmName = element?.["@segw.name"] ?? elementName;
 		let internalName = element?.["@segw.abap.name"] ?? ABAPUtils.getABAPName(element) ?? ABAPUtils.getABAPName(elementName);
 		
 		if(internalName.length > 30) LOG.warn(`Internal Name ${internalName} is too long. Consider shortening it with '@segw.abap.name'`);
 		this._writer.writeLine(`primitive_property = entity_type->create_prim_property( '${internalName.toUpperCase()}' ).`);
-		this._writer.writeLine(`primitive_property->set_edm_name( '${elementName}' ).`);
+		this._writer.writeLine(`primitive_property->set_edm_name( '${edmName}' ).`);
 
 		// Filter CSDL for nav properties that uses these elements.
 		let navProperties = Object.fromEntries(Object.entries(this._entity?.csdl ?? {}).filter((element: any) => { 
@@ -228,8 +231,8 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
 
 		// Internal/external names
-		const navNameEdm      = ABAPUtils.getABAPName(elementName);          // external EDM name
-		const navNameInternal = ABAPUtils.getABAPName(elementName).toUpperCase(); // internal name
+		const navNameEdm      = element?.["@segw.name"] ?? elementName;          // external EDM name
+		const navNameInternal = (element?.["@segw.abap.name"] ?? ABAPUtils.getABAPName(navNameEdm)).replace(/\./g, '_').toUpperCase(); // internal name
 
 		// Target entity type (qualified name from CSDL)
 		let targetTypeQName = element?.$Type;
@@ -313,7 +316,8 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 		this._writer = new CodeWriter();
 		let entityName = ABAPUtils.getABAPName(this._entity?.csn);
 		let entityNameInternal = entityName.replace(/\./g, '_');
-		let entitySetName = (<any>entity)?.["@segw.set.name"] ?? entityNameInternal;
+		let entitySetName = (<any>this._entity?.csn)?.["@segw.set.name"] ?? entityNameInternal;
+		let entitySetAbapName = (<any>this._entity?.csn)?.["@segw.abap.name"] ?? entitySetName;
 
 		this._writer.writeLine("DATA:").increaseIndent();
 		this._writer.writeLine("entity_type TYPE REF TO /iwbep/if_v4_med_entity_type,");
@@ -343,7 +347,7 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 		this._writeElements();
 
 		this._writer.writeLine(`" Create Entity Set`);
-		this._writer.writeLine(`entity_set = entity_type->create_entity_set( '${entitySetName.toUpperCase()}' ).`);
+		this._writer.writeLine(`entity_set = entity_type->create_entity_set( '${entitySetAbapName.toUpperCase()}' ).`);
 		this._writer.writeLine(`entity_set->set_edm_name( |${entitySetName}| ).`);
 		this._writer.writeLine();
 

@@ -91,29 +91,29 @@ export default class EntityMPCV2Writer implements IFCodeGenerator {
 
 	private _writeEntitySet() {
 		let entityName = ABAPUtils.getABAPName(this._entity);
-		let entitySetName = (<any>entity)?.["@segw.set.name"] ?? `${entityName}Set`;
+		let entitySetName = (<any>this._entity)?.["@segw.set.name"] ?? `${entityName}Set`;
 		this._writer.writeLine(`entity_set = entity_type->create_entity_set( '${entitySetName}' ).`).writeLine();
 		
-		let readOnlyAbap = ABAPUtils.toABAPBool(!(<any>entity)?.["@readonly"]);
+		let readOnlyAbap = ABAPUtils.toABAPBool(!(<any>this._entity)?.["@readonly"]);
 		this._writer.writeLine(`entity_set->set_creatable( ${readOnlyAbap} ).`);
 		this._writer.writeLine(`entity_set->set_updatable( ${readOnlyAbap} ).`);
 		this._writer.writeLine(`entity_set->set_deletable( ${readOnlyAbap} ).`);
 		this._writer.writeLine();
 		
-		if((<any>entity)?.["@segw.pageable"]){
-			this._writer.writeLine(`entity_set->set_pageable( ${ABAPUtils.toABAPBool((<any>entity)?.["@segw.sortable"])} ).`);
+		if((<any>this._entity)?.["@segw.pageable"]){
+			this._writer.writeLine(`entity_set->set_pageable( ${ABAPUtils.toABAPBool((<any>this._entity)?.["@segw.sortable"])} ).`);
 		}
-		if((<any>entity)?.["@segw.addressable"]){
-			this._writer.writeLine(`entity_set->set_addressable( ${ABAPUtils.toABAPBool((<any>entity)?.["@segw.addressable"])} ).`);
+		if((<any>this._entity)?.["@segw.addressable"]){
+			this._writer.writeLine(`entity_set->set_addressable( ${ABAPUtils.toABAPBool((<any>this._entity)?.["@segw.addressable"])} ).`);
 		}
-		if((<any>entity)?.["@segw.ftxt_search"]){
-			this._writer.writeLine(`entity_set->set_has_ftxt_search( ${ABAPUtils.toABAPBool((<any>entity)?.["@segw.ftxt_search"])} ).`);
+		if((<any>this._entity)?.["@segw.ftxt_search"]){
+			this._writer.writeLine(`entity_set->set_has_ftxt_search( ${ABAPUtils.toABAPBool((<any>this._entity)?.["@segw.ftxt_search"])} ).`);
 		}
-		if((<any>entity)?.["@segw.subscribable"]){
-			this._writer.writeLine(`entity_set->set_subscribable( ${ABAPUtils.toABAPBool((<any>entity)?.["@segw.subscribable"])} ).`);
+		if((<any>this._entity)?.["@segw.subscribable"]){
+			this._writer.writeLine(`entity_set->set_subscribable( ${ABAPUtils.toABAPBool((<any>this._entity)?.["@segw.subscribable"])} ).`);
 		}
-		if((<any>entity)?.["@segw.filter_required"]){
-			this._writer.writeLine(`entity_set->set_filter_required( ${ABAPUtils.toABAPBool((<any>entity)?.["@segw.filter_required"])} ).`);
+		if((<any>this._entity)?.["@segw.filter_required"]){
+			this._writer.writeLine(`entity_set->set_filter_required( ${ABAPUtils.toABAPBool((<any>this._entity)?.["@segw.filter_required"])} ).`);
 		}
 	}
 
@@ -187,7 +187,7 @@ export default class EntityMPCV2Writer implements IFCodeGenerator {
 		let entityName = ABAPUtils.getABAPName(this._entity);
 		this._writer.writeLine(`entity_type->bind_structure( `).increaseIndent(); 
 		this._writer.writeLine(`iv_structure_name = '${this._className}=>T_${entityName}'`);
-		if((<any>entity)?.["@segw.abap.type"])
+		if((<any>this._entity)?.["@segw.abap.type"])
 			this._writer.writeLine(`iv_bind_conversion = abap_true`);
 		this._writer.decreaseIndent().writeLine(`).`);
 		this._writer.writeLine();
