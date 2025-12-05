@@ -45,9 +45,6 @@ jobs:
 
       - name: Publish to npm (Trusted Publishing)
         run: npm publish --provenance --access public --tag "${{ steps.tag.outputs.tag }}"
-        env:
-          # No token needed when npm Trusted Publishing is configured for this repo
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN || '' }}
 
   publish-github-packages:
     needs: publish-npm
