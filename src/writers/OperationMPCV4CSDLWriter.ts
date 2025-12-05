@@ -250,6 +250,7 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 				};
 
 				operationInfo.abap_name = (<any>operationInfo.csn)?.["@segw.abap.name"] ?? ABAPUtils.getABAPName(operationInfo.csn).replace(/\./g, '_');
+				operationInfo.name = (<any>operationInfo.csn)?.["@segw.name"] ?? operationInfo.name;
 
 				// TODO: This could be re-written as the following ABAP
 				// try.

@@ -159,7 +159,11 @@ export default class OperationMPCV4Writer implements IFCodeGenerator {
 			// catch /iwbep/cx_gateway.
 			// 	operation = model->create_action( |${operationName}| ).
 			// endtry.
-			this._writer.writeLine(`${operation.kind} = model->create_${operation.kind}( |${operation.name.toUpperCase()}| ).`);
+			const internalName = ((<any>operation)?.["@segw.abap.name"] ?? operation.name).replace(/\./g, '_').toUpperCase();
+			const edmName = this._getOperationName(operation);
+
+			this._writer.writeLine(`${operation.kind} = model->create_${operation.kind}( |${internalName}| ).`);
+			this._writer.writeLine(`${operation.kind}->set_edm_name( '${edmName}' ).`);
 			
 			this._writeParams(operation);
 			this._writeReturn(operation);
