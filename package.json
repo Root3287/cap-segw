@@ -11,6 +11,10 @@
   ],
   "license": "Apache-2.0",
   "author": "Timothy Gibbons",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/root3287/cap-segw"
+  },
   "type": "commonjs",
   "main": "cds-plugin.js",
   "types": "dist/index.d.ts",
