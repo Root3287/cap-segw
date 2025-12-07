@@ -1,6 +1,6 @@
 {
   "name": "@root3287/cap-segw",
-  "version": "1.0.0-rc.4",
+  "version": "1.0.0-rc.5",
   "description": "SAP CAP Plugin to generate SEGW classes",
   "keywords": [
     "CAP",
@@ -12,8 +12,7 @@
   "license": "Apache-2.0",
   "author": "Timothy Gibbons",
   "repository": {
-    "type": "git",
-    "url": "https://github.com/root3287/cap-segw"
+    "url": "https://github.com/Root3287/cap-segw"
   },
   "type": "commonjs",
   "main": "cds-plugin.js",
