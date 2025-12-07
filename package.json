@@ -1,6 +1,6 @@
 {
   "name": "@root3287/cap-segw",
-  "version": "1.0.0-rc.3",
+  "version": "1.0.0-rc.4",
   "description": "SAP CAP Plugin to generate SEGW classes",
   "keywords": [
     "CAP",
