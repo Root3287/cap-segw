@@ -23,6 +23,7 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 	private _className: string = "";
 	private _writer: CodeWriter = new CodeWriter();
 	private _compilerInfo?: CompilerInfo;
+	private _associationAbapMap: Record<string, string> = {};
 
 	public setCompilerInfo(compilerInfo?: CompilerInfo){
 		this._compilerInfo = compilerInfo;
@@ -30,6 +31,7 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 
 	public setEntity(csnEntity: entity, csdlEntity: any){
 		this._entity = { csn: csnEntity, csdl: csdlEntity };
+		this._associationAbapMap = this._buildAssociationAbapMap(csnEntity);
 	}
 
 	public setClassName(className: string){
@@ -108,6 +110,28 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 		return (!this._isMultiplicityNullable(multiplicity) && !principalNullable && dependentNullable);
 	};
 
+	private _getNamespace(): string | undefined {
+		return Object.keys(this._compilerInfo?.csdl ?? {}).find((k) => !k.startsWith("$"));
+	}
+
+	private _buildAssociationAbapMap(csnEntity: entity): Record<string, string> {
+		const map: Record<string, string> = {};
+		Object.entries((csnEntity as any)?.elements ?? {}).forEach(([elName, el]: [string, any]) => {
+			if(!(el?.foreignKeys || el?.type === "cds.Association" || el?.type === "cds.Composition" || el?._target)) return;
+			const abapOverride = el?.["@segw.abap.name"];
+			if(!abapOverride) return;
+			Object.keys(el?.foreignKeys ?? {}).forEach((fk: string) => {
+				const dependentName = `${elName}_${fk}`;
+				map[dependentName] = abapOverride;
+			});
+		});
+		return map;
+	}
+
+	private _getAssociationAbapName(elementName: string): string | undefined {
+		return this._associationAbapMap[elementName];
+	}
+
 	private _processElement(element: any): void {
 		let primitive = CDSUtils.cds2edm((<any>element.type));
 		let elementPrototype = Object.getPrototypeOf(element);
@@ -165,7 +189,8 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 	}
 
 	private _processCSDLElement(elementName: string, element: any){
-		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
+		const namespace = this._getNamespace();
+		const serviceName = (<any>this._entity?.csn)?._service?.name ?? "";
 
 		if(element?.["$Kind"] === "NavigationProperty"){
 			this._writeCSDLNavProperty(elementName, element);
@@ -175,7 +200,8 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 		let kind = element["$Kind"] ?? EDMPrimitive.String;
 
 		const edmName = element?.["@segw.name"] ?? elementName;
-		let internalName = element?.["@segw.abap.name"] ?? ABAPUtils.getABAPName(element) ?? ABAPUtils.getABAPName(elementName);
+		const assocAbapOverride = this._getAssociationAbapName(elementName);
+		let internalName = element?.["@segw.abap.name"] ?? assocAbapOverride ?? ABAPUtils.getABAPName(element) ?? ABAPUtils.getABAPName(elementName);
 		
 		if(internalName.length > 30) LOG.warn(`Internal Name ${internalName} is too long. Consider shortening it with '@segw.abap.name'`);
 		this._writer.writeLine(`primitive_property = entity_type->create_prim_property( '${internalName.toUpperCase()}' ).`);
@@ -193,14 +219,16 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 
 		for(let dependent of Object.values(navProperties)){
 			let multiplicity = this._getMultiplicity(dependent);
+			const targetType = (<any>dependent)?.["$Type"];
+			const targetEntityName = targetType?.substring(serviceName.length + 1);
 			let target: Entity = {
 				csn: [ 
 					"services", 
 					namespace, 
 					"entities", 
-					(<any>dependent)?.["target"].substring(namespace.length+1)
-				].reduce((acc: any, curr: any) => acc[curr], this._compilerInfo?.csn),
-				csdl: this._compilerInfo?.csdl?.[namespace]?.[(<any>dependent)?.["$Type"].substring((<any>this._entity?.csn)?._service.name.length+1)],
+					targetEntityName
+				].reduce((acc: any, curr: any) => acc?.[curr], this._compilerInfo?.csn),
+				csdl: this._compilerInfo?.csdl?.[namespace]?.[targetEntityName],
 			};
 			let dependentElement = target?.csn?.elements?.[(<any>dependent)?.["$ReferentialConstraint"]?.[elementName]];
 			let depNull = this._warnDependentNull(multiplicity, !element?.["notNull"], !dependentElement?.["key"] && !dependentElement?.["notNull"]);
@@ -228,7 +256,8 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 	}
 
 	private _writeCSDLNavProperty(elementName: string, element: any){
-		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
+		const namespace = this._getNamespace();
+		const serviceName = (<any>this._entity?.csn)?._service?.name ?? "";
 
 		// Internal/external names
 		const navNameEdm      = element?.["@segw.name"] ?? elementName;          // external EDM name
@@ -237,14 +266,15 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 		// Target entity type (qualified name from CSDL)
 		let targetTypeQName = element?.$Type;
 		if (!targetTypeQName) return; // nothing to wire
-		targetTypeQName = targetTypeQName.substring((<any>this._entity?.csn)?._service.name.length+1);
+		const targetEntityName = targetTypeQName.substring(serviceName.length + 1);
+		targetTypeQName = targetTypeQName.substring(serviceName.length + 1);
 
 		let target: Entity = {
 			csn: [ 
 				"services", 
 				namespace, 
 				"entities", 
-				element?.["target"].substring(namespace.length+1)
+				targetEntityName
 			].reduce((acc: any, curr: any) => acc?.[curr], this._compilerInfo?.csn),
 			csdl: this._compilerInfo?.csdl?.[namespace]?.[targetTypeQName],
 		};
