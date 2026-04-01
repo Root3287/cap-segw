@@ -190,6 +190,7 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 
 	private _processCSDLElement(elementName: string, element: any){
 		const namespace = this._getNamespace();
+		if(!namespace) return;
 		const serviceName = (<any>this._entity?.csn)?._service?.name ?? "";
 
 		if(element?.["$Kind"] === "NavigationProperty"){
@@ -221,6 +222,7 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 			let multiplicity = this._getMultiplicity(dependent);
 			const targetType = (<any>dependent)?.["$Type"];
 			const targetEntityName = targetType?.substring(serviceName.length + 1);
+			if(!targetEntityName) continue;
 			let target: Entity = {
 				csn: [ 
 					"services", 
@@ -257,6 +259,7 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 
 	private _writeCSDLNavProperty(elementName: string, element: any){
 		const namespace = this._getNamespace();
+		if(!namespace) return;
 		const serviceName = (<any>this._entity?.csn)?._service?.name ?? "";
 
 		// Internal/external names
@@ -267,6 +270,7 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 		let targetTypeQName = element?.$Type;
 		if (!targetTypeQName) return; // nothing to wire
 		const targetEntityName = targetTypeQName.substring(serviceName.length + 1);
+		if(!targetEntityName) return;
 		targetTypeQName = targetTypeQName.substring(serviceName.length + 1);
 
 		let target: Entity = {

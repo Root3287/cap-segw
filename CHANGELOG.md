@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Feature
+- Added implementation generator
+
 ### Fix
 - Referencing Association ignores `@segw.abap.name`
 

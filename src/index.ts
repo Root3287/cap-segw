@@ -1,20 +1,21 @@
 import cds, { csn, EDM, linked } from "@sap/cds";
-import { CompilerInfo, OutputData } from "./types/frontend";
-import IFServiceClassGenerator from "./generator/IFCodeGenerator";
+import { CompileOptions, CompilerInfo, OutputData } from "./types/frontend";
+import IFServiceClassGenerator from "./generator/IFServiceClassGenerator";
 import ModelProviderClassGeneratorV4 from "./generator/ModelProviderClassGeneratorV4";
 import ModelProviderClassGeneratorV2 from "./generator/ModelProviderClassGeneratorV2";
 import DataProviderClassGeneratorV4 from "./generator/DataProviderClassGeneratorV4";
 import DataProviderClassGeneratorV2 from "./generator/DataProviderClassGeneratorV2";
+import ServiceExtensionClassGenerator from "./generator/ServiceExtensionClassGenerator";
 
 const LOG = cds.log("segw");
 
-export default (csn: csn.CSN, options: any) => {
+export default (csn: csn.CSN, options: CompileOptions = {}) => {
 	// Group by Service
 	const csdl: EDM | string = cds.compile.to.edm(csn, Object.assign({
 		odataOpenapiHints: true,
 		edm4OpenAPI: true,
 		to: 'openapi'
-	}, options));
+	}, options) as any);
 
 	// LOG.info(csdl);
 
@@ -52,14 +53,8 @@ function compileMultiple(compilerInfo: CompilerInfo): OutputData[] {
 };
 
 function compileSingle(compilerInfo: CompilerInfo): OutputData[]{
-
 	let odataVersion = parseInt(compilerInfo.options?.["odata-version"] ?? "4");
-
-	// Go Home Typescript, you're drunk
-	let generators: IFServiceClassGenerator[] = [
-		(odataVersion == 2) ? new ModelProviderClassGeneratorV2() : new ModelProviderClassGeneratorV4(),
-		(odataVersion == 2) ? new DataProviderClassGeneratorV2() : new DataProviderClassGeneratorV4()
-	];
+	let generators = getGenerators(odataVersion, compilerInfo.options);
 
 	generators.forEach((generator: IFServiceClassGenerator) => {
 		(<any>generator).setCompilerInfo(compilerInfo)
@@ -71,6 +66,36 @@ function compileSingle(compilerInfo: CompilerInfo): OutputData[]{
 			code: (<any>generator).generate() 
 		};
 	});
+}
+
+function getGenerators(odataVersion: number, options?: CompileOptions): IFServiceClassGenerator[] {
+	const extOnly = options?.extOnly === true;
+	const includeExtensions = extOnly || options?.impl === true;
+	const generators: IFServiceClassGenerator[] = [];
+
+	if(!extOnly){
+		generators.push(...createBaseGenerators(odataVersion));
+	}
+
+	if(includeExtensions){
+		generators.push(...createExtensionGenerators(odataVersion));
+	}
+
+	return generators;
+}
+
+function createBaseGenerators(odataVersion: number): IFServiceClassGenerator[] {
+	return [
+		(odataVersion == 2) ? new ModelProviderClassGeneratorV2() : new ModelProviderClassGeneratorV4(),
+		(odataVersion == 2) ? new DataProviderClassGeneratorV2() : new DataProviderClassGeneratorV4(),
+	];
+}
+
+function createExtensionGenerators(odataVersion: number): IFServiceClassGenerator[] {
+	return [
+		new ServiceExtensionClassGenerator((odataVersion == 2) ? new ModelProviderClassGeneratorV2() : new ModelProviderClassGeneratorV4()),
+		new ServiceExtensionClassGenerator((odataVersion == 2) ? new DataProviderClassGeneratorV2() : new DataProviderClassGeneratorV4()),
+	];
 }
 
 function* _iterate(generatedClasses: OutputData[]){

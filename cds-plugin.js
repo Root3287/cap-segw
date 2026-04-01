@@ -6,6 +6,10 @@ const cds = require(
 const SEGWCompilerHandler = require("./dist");
 
 cds.compile.to.segw = (csn, options) => SEGWCompilerHandler.default(csn, options);
+cds.compile.to["segw-ext"] = (csn, options) => SEGWCompilerHandler.default(csn, Object.assign({}, options, {
+  impl: true,
+  extOnly: true,
+}));
 
 // TODO: Expose a build service
 // cds.build?.register?.('segw', class SEGWBuildPlugin extends cds.build.Plugin {
