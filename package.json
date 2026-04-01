@@ -36,12 +36,12 @@
     "@types/jest": "^30.0",
     "@types/node": "^25.5",
     "better-sqlite3": "^12.8",
-    "jest": "^30.3",
+    "jest": "^30.3.0",
     "sqlite": "^5.1",
-    "ts-jest": "^29.4",
+    "ts-jest": "^29.4.9",
     "ts-node": "^10.9",
     "tsx": "^4.21",
-    "typescript": "^6.0"
+    "typescript": "^6.0.2"
   },
   "peerDependencies": {
     "@sap/cds": "^9.8"
