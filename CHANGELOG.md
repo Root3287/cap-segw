@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-05-15
+
+### Fix 
+
+- Entity Set Navigation Property Binding.
+
 ## [1.1.0] - 2026-04-01
 
 ### Feature
@@ -56,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitLab CI pipeline with test/build, manual publish to GitLab registry, and GitHub status/release notifications.
 - GitHub Actions workflow for npm publishing (Trusted Publishing) and GitLab registry publishing.
 
+[1.1.1]: https://git.root3287.site/root3287/cap-segw/-/releases/v1.1.1 https://github.com/Root3287/cap-segw/releases/tag/v1.1.1
 [1.1.0]: https://git.root3287.site/root3287/cap-segw/-/releases/v1.1.0 https://github.com/Root3287/cap-segw/releases/tag/v1.1.0
 [1.0.0]: https://git.root3287.site/root3287/cap-segw/-/releases/v1.0.0 https://github.com/Root3287/cap-segw/releases/tag/v1.0.0
 [1.0.0-rc.6]: https://git.root3287.site/root3287/cap-segw/-/releases/v1.0.0-rc.6 https://github.com/Root3287/cap-segw/releases/tag/v1.0.0-rc.6
