@@ -132,6 +132,19 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 		return this._associationAbapMap[elementName];
 	}
 
+	private _getEntitySetAbapName(entityDef: entity): string {
+		let entityName = ABAPUtils.getABAPName(entityDef).replace(/\./g, '_');
+		let entitySetName = (<any>entityDef)?.["@segw.set.name"] ?? entityName;
+		let entitySetAbapName = (<any>entityDef)?.["@segw.abap.name"] ?? entitySetName;
+		return entitySetAbapName.toUpperCase();
+	}
+
+	private _getNavigationPropertyInternalName(elementName: string, element: any): string {
+		return (element?.["@segw.abap.name"] ?? ABAPUtils.getABAPName(element?.["@segw.name"] ?? elementName))
+			.replace(/\./g, '_')
+			.toUpperCase();
+	}
+
 	private _processElement(element: any): void {
 		let primitive = CDSUtils.cds2edm((<any>element.type));
 		let elementPrototype = Object.getPrototypeOf(element);
@@ -346,12 +359,34 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 		this._writer.writeLine();
 	}
 
+	private _writeEntitySetNavigation(): void {
+		const namespace = this._getNamespace();
+		const entityShortName = this._entity?.csn?.name?.substring(((<any>this._entity?.csn)?._service?.name ?? "").length + 1);
+		const entitySet = this._compilerInfo?.csdl?.[namespace ?? ""]?.EntityContainer?.[entityShortName ?? ""];
+		for(const [navigationPath, targetEntityName] of Object.entries<string>(entitySet?.["$NavigationPropertyBinding"] ?? {})){
+			const navElement = this._entity?.csdl?.[navigationPath];
+			const targetEntity = [
+				"services",
+				namespace,
+				"entities",
+				targetEntityName,
+			].reduce((acc: any, curr: any) => acc?.[curr], this._compilerInfo?.csn);
+			if(!navElement || !targetEntity) continue;
+
+			this._writer.writeLine(`entity_set->add_navigation_prop_binding(`).increaseIndent()
+				.writeLine(`iv_navigation_property_path = '${this._getNavigationPropertyInternalName(navigationPath, navElement)}'`)
+				.writeLine(`iv_target_entity_set = '${this._getEntitySetAbapName(targetEntity)}'`)
+			.decreaseIndent().writeLine(`).`);
+		}
+		this._writer.writeLine();
+	}
+
 	public generate(): string {
 		this._writer = new CodeWriter();
 		let entityName = ABAPUtils.getABAPName(this._entity?.csn);
 		let entityNameInternal = entityName.replace(/\./g, '_');
 		let entitySetName = (<any>this._entity?.csn)?.["@segw.set.name"] ?? entityNameInternal;
-		let entitySetAbapName = (<any>this._entity?.csn)?.["@segw.abap.name"] ?? entitySetName;
+		let entitySetAbapName = this._getEntitySetAbapName(this._entity?.csn as entity);
 
 		this._writer.writeLine("DATA:").increaseIndent();
 		this._writer.writeLine("entity_type TYPE REF TO /iwbep/if_v4_med_entity_type,");
@@ -385,9 +420,10 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 		this._writeElements();
 
 		this._writer.writeLine(`" Create Entity Set`);
-		this._writer.writeLine(`entity_set = entity_type->create_entity_set( '${entitySetAbapName.toUpperCase()}' ).`);
+		this._writer.writeLine(`entity_set = entity_type->create_entity_set( '${entitySetAbapName}' ).`);
 		this._writer.writeLine(`entity_set->set_edm_name( |${entitySetName}| ).`);
-		this._writer.writeLine();
+
+		this._writeEntitySetNavigation();
 
 		return this._writer.generate();
 	}
