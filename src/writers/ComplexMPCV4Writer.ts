@@ -34,6 +34,15 @@ export default class ComplexMPCV4Writer implements IFCodeGenerator {
 		this._compilerInfo = compilerInfo;
 	}
 
+	private _getPrimitiveEdmType(property: any): EDMPrimitive {
+		const directType = property?.["$Type"] ?? property?.["$Kind"];
+		if(typeof directType === "string" && directType.startsWith("Edm.")) {
+			return directType as EDMPrimitive;
+		}
+
+		return CDSUtils.cds2edm(property?.type) ?? EDMPrimitive.String;
+	}
+
 	private _writeHeader(){
 		this._writer.writeLine("DATA:").increaseIndent();
 		this._writer.writeLine("complex_type TYPE REF TO /iwbep/if_v4_med_cplx_type,");
@@ -72,16 +81,16 @@ export default class ComplexMPCV4Writer implements IFCodeGenerator {
 		let internalName = property?.["@segw.abap.name"] ?? ABAPUtils.getABAPName(property) ?? ABAPUtils.getABAPName(propertyName);
 		if(internalName.length > 30) LOG.warn(`Internal Name ${internalName} is too long. Consider shortening it with '@segw.abap.name'`);
 
-		let kind = element["$Kind"] ?? EDMPrimitive.String;
+		const edmType = this._getPrimitiveEdmType(property);
 
 		this._writer.writeLine(`primitive_property = complex_type->create_prim_property( '${internalName.toUpperCase()}' ).`);
 		this._writer.writeLine(`primitive_property->set_edm_name( '${propertyName}' ).`);
-		this._writer.writeLine(`primitive_property->set_edm_type( '${kind.substring(4)}' ).`);
+		this._writer.writeLine(`primitive_property->set_edm_type( '${edmType.substring(4)}' ).`);
 		if(property?.key)
 			this._writer.writeLine(`primitive_property->set_is_key( ).`);
 		if(!property?.key && !property?.notNull)
 			this._writer.writeLine(`primitive_property->set_is_nullable( ).`);
-		if(kind !== EDMPrimitive.Guid && (<any>property)?.["$MaxLength"])
+		if(edmType !== EDMPrimitive.Guid && (<any>property)?.["$MaxLength"])
 			this._writer.writeLine(`primitive_property->set_max_length( '${(<any>property)?.["$MaxLength"]}' ).`);
 		// this._writer.writeLine(`primitive_property->set_precision( ).`);
 		// this._writer.writeLine(`primitive_property->set_scale( ).`);

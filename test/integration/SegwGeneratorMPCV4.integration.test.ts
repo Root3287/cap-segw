@@ -10,6 +10,9 @@ describe("Integration: CAP -> SEGW MPC V4 generation", () => {
 				entity Products {
 					key ID: UUID;
 					name: String(120);
+					isActive: Boolean;
+					availableOn: Date;
+					changedAt: Timestamp;
 					stock: Integer;
 					shipTo: Address;
 				};
@@ -32,10 +35,19 @@ describe("Integration: CAP -> SEGW MPC V4 generation", () => {
 
 		expect(mpc).toContain("TYPES: BEGIN OF t_Products");
 		expect(mpc).toContain("name TYPE STRING");
+		expect(mpc).toContain("isActive TYPE abap_bool");
+		expect(mpc).toContain("availableOn TYPE D");
+		expect(mpc).toContain("changedAt TYPE TIMESTAMP");
 		expect(mpc).toContain("shipTo_street TYPE STRING");
 
 		expect(mpc).toContain("entity_type = model->create_entity_type( 'PRODUCTS' ).");
 		expect(mpc).toContain("primitive_property->set_edm_name( 'ID' ).");
+		expect(mpc).toContain("primitive_property->set_edm_name( 'isActive' ).");
+		expect(mpc).toContain("primitive_property->set_edm_type( 'Boolean' ).");
+		expect(mpc).toContain("primitive_property->set_edm_name( 'availableOn' ).");
+		expect(mpc).toContain("primitive_property->set_edm_type( 'Date' ).");
+		expect(mpc).toContain("primitive_property->set_edm_name( 'changedAt' ).");
+		expect(mpc).toContain("primitive_property->set_edm_type( 'DateTimeOffset' ).");
 		expect(mpc).toContain("primitive_property->set_is_key( ).");
 		expect(mpc).toContain("primitive_property->set_max_length( '120' ).");
 		expect(mpc).toContain("entity_set = entity_type->create_entity_set( 'PRODUCTS' ).");

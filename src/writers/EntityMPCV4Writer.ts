@@ -38,6 +38,15 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 		this._className = className;
 	}
 
+	private _getPrimitiveEdmType(element: any): EDMPrimitive {
+		const directType = element?.["$Type"] ?? element?.["$Kind"];
+		if(typeof directType === "string" && directType.startsWith("Edm.")) {
+			return directType as EDMPrimitive;
+		}
+
+		return CDSUtils.cds2edm(element?.type) ?? EDMPrimitive.String;
+	}
+
 	private _writeElements(){
 		if((<any>this._entity?.csn)?.["@segw.expand"]){
 			LOG.warn("@segw.expand is experimental!");
@@ -211,7 +220,7 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 			return;
 		}
 
-		let kind = element["$Kind"] ?? EDMPrimitive.String;
+		const edmType = this._getPrimitiveEdmType(element);
 
 		const edmName = element?.["@segw.name"] ?? elementName;
 		const assocAbapOverride = this._getAssociationAbapName(elementName);
@@ -264,9 +273,9 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 				this._writer.writeLine(`primitive_property->set_is_key( ).`);
 		if(!element?.key && !element?.notNull)
 			this._writer.writeLine(`primitive_property->set_is_nullable( ).`);
-		if(element !== EDMPrimitive.Guid && (<any>element)?.["$MaxLength"])
+		if(edmType !== EDMPrimitive.Guid && (<any>element)?.["$MaxLength"])
 			this._writer.writeLine(`primitive_property->set_max_length( '${(<any>element)?.["$MaxLength"]}' ).`);
-		this._writer.writeLine(`primitive_property->set_edm_type( '${kind.substring(4)}' ).`);
+		this._writer.writeLine(`primitive_property->set_edm_type( '${edmType.substring(4)}' ).`);
 		this._writer.writeLine();
 	}
 
