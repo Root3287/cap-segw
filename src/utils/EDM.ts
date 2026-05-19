@@ -5,7 +5,7 @@ import { struct } from "@sap/cds";
 import { Primitive as EDMPrimitive } from "../types/edm";
 
 export class EDM {
-	static readonly V4_MED_ELEMENT_DATA_TYPE_PREFIX = "/iwbep/if_v4_med_element=>gcs_edm_data_type-";
+	static readonly V4_MED_ELEMENT_DATA_TYPE_PREFIX = "/iwbep/if_v4_med_element=>gcs_edm_data_types-";
 
 	/**
 	 * Converts from EDM types to ABAP Primative Type
