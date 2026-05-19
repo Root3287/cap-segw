@@ -3,6 +3,7 @@ import IFCodeGenerator from "../generator/IFCodeGenerator";
 
 import { ABAP as ABAPUtils } from "../utils/ABAP";
 import { CDS as CDSUtils } from "../utils/CDS";
+import { EDM as EDMUtils } from "../utils/EDM";
 import { Primitive as EDMPrimitive } from "../types/edm";
 import { CompilerInfo } from "../types/frontend";
 
@@ -169,7 +170,7 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 
 			let primitiveType = CDSUtils.cds2edm(elementPrototype.type) ?? primitive;
 
-			this._writer.writeLine(`primitive_property->set_edm_type( '${primitiveType?.substring(4)}' ).`);
+			this._writer.writeLine(`primitive_property->set_edm_type( ${EDMUtils.edm2v4MedDataType(primitiveType as EDMPrimitive)} ).`);
 
 			if(element?.key)
 				this._writer.writeLine(`primitive_property->set_is_key( ).`);
@@ -275,7 +276,7 @@ export default class EntityMPCV4Writer implements IFCodeGenerator {
 			this._writer.writeLine(`primitive_property->set_is_nullable( ).`);
 		if(edmType !== EDMPrimitive.Guid && (<any>element)?.["$MaxLength"])
 			this._writer.writeLine(`primitive_property->set_max_length( '${(<any>element)?.["$MaxLength"]}' ).`);
-		this._writer.writeLine(`primitive_property->set_edm_type( '${edmType.substring(4)}' ).`);
+		this._writer.writeLine(`primitive_property->set_edm_type( ${EDMUtils.edm2v4MedDataType(edmType)} ).`);
 		this._writer.writeLine();
 	}
 

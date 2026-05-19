@@ -3,6 +3,7 @@ import IFCodeGenerator from "../generator/IFCodeGenerator";
 
 import { ABAP as ABAPUtils } from "../utils/ABAP";
 import { CDS as CDSUtils } from "../utils/CDS";
+import { EDM as EDMUtils } from "../utils/EDM";
 
 import { CompilerInfo } from "../types/frontend";
 import { Primitive as EDMPrimitive } from "../types/edm";
@@ -85,7 +86,7 @@ export default class ComplexMPCV4Writer implements IFCodeGenerator {
 
 		this._writer.writeLine(`primitive_property = complex_type->create_prim_property( '${internalName.toUpperCase()}' ).`);
 		this._writer.writeLine(`primitive_property->set_edm_name( '${propertyName}' ).`);
-		this._writer.writeLine(`primitive_property->set_edm_type( '${edmType.substring(4)}' ).`);
+		this._writer.writeLine(`primitive_property->set_edm_type( ${EDMUtils.edm2v4MedDataType(edmType)} ).`);
 		if(property?.key)
 			this._writer.writeLine(`primitive_property->set_is_key( ).`);
 		if(!property?.key && !property?.notNull)

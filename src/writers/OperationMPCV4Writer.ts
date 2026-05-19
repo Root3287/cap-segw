@@ -3,6 +3,8 @@ import IFCodeGenerator from "../generator/IFCodeGenerator";
 
 import { ABAP as ABAPUtils } from "../utils/ABAP";
 import { CDS as CDSUtils } from "../utils/CDS";
+import { EDM as EDMUtils } from "../utils/EDM";
+import { Primitive as EDMPrimitive } from "../types/edm";
 
 import cds from "@sap/cds";
 
@@ -83,7 +85,7 @@ export default class OperationMPCV4Writer implements IFCodeGenerator {
 				if(paramName.length > 30) LOG.warn(`${paramName} is too long consider shortening with "@segw.abap.name".`);
 
 				this._writer.writeLine(`primitive = model->create_primitive_type( |${paramName}| ).`);
-				this._writer.writeLine(`primitive->set_edm_type( '${primitive.substr(4)}' ).`);
+				this._writer.writeLine(`primitive->set_edm_type( ${EDMUtils.edm2v4MedDataType(primitive)} ).`);
 				this._writer.writeLine(`${operation.kind}_parameter->set_primitive_type( '${paramName}' ).`);
 			}else if(paramPrototype?.kind === "entity"){
 				this._writer.writeLine(`${operation.kind}_parameter->set_entity_type( '${ABAPUtils.getABAPName(paramPrototype).toUpperCase()}' ).`);
@@ -114,12 +116,12 @@ export default class OperationMPCV4Writer implements IFCodeGenerator {
 			if(returnPrimative){
 				if(returnPrimativeName.length > 30) LOG.warn(`${returnPrimativeName} is too long consider shortening with "@segw.abap.name".`);
 				this._writer.writeLine(`primitive = model->create_primitive_type( |${returnPrimativeName}| ).`);
-				this._writer.writeLine(`primitive->set_edm_type( '${returnPrimative.substr(4)}' ).`);
+				this._writer.writeLine(`primitive->set_edm_type( ${EDMUtils.edm2v4MedDataType(returnPrimative)} ).`);
 				this._writer.writeLine(`${operation.kind}_return->set_primitive_type( '${returnPrimativeName}' ).`);
 			}else if(returnEntity?.kind === "type"){
 				if(returnPrimativeName.length > 30) LOG.warn(`${returnPrimativeName} is too long consider shortening with "@segw.abap.name".`);
 				this._writer.writeLine(`primitive = model->create_primitive_type( |${returnPrimativeName}| ).`);
-				this._writer.writeLine(`primitive->set_edm_type( 'String' ).`);
+				this._writer.writeLine(`primitive->set_edm_type( ${EDMUtils.edm2v4MedDataType(EDMPrimitive.String)} ).`);
 				this._writer.writeLine(`${operation.kind}_return->set_primitive_type( '${returnPrimativeName}' ).`);
 				// this._writer.writeLine(`${operation.kind}_return->set_complex_type( '${ABAPUtils.getABAPName(returnEntity)}' ).`);
 			}else if(returnEntity?.kind === "entity"){

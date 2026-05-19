@@ -8,10 +8,18 @@ export enum Primitive {
 	Decimal = 'Edm.Decimal',
 	Double = 'Edm.Double',
 	Date = 'Edm.Date',
+	// Removed from V4
 	Time = 'Edm.Time',
+	// Removed from V4
 	DateTime = 'Edm.DateTime',
 	DateTimeOffset = 'Edm.DateTimeOffset',
 	Timestamp = 'Edm.Timestamp',
 	String = 'Edm.String',
 	Binary = 'Edm.Binary',
+	// V4
+	SByte = 'Edm.SByte',
+	Single = 'Edm.Single',
+	Stream = 'Edm.Stream',
+	Duration = 'Edm.Duration',
+	TimeOfDay = 'Edm.TimeOfDay'
 };

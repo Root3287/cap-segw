@@ -3,6 +3,7 @@ import IFCodeGenerator from "../generator/IFCodeGenerator";
 
 import { ABAP as ABAPUtils } from "../utils/ABAP";
 import { CDS as CDSUtils } from "../utils/CDS";
+import { EDM as EDMUtils } from "../utils/EDM";
 
 import { CompilerInfo } from "../types/frontend";
 import { Primitive as EDMPrimitive } from "../types/edm";
@@ -136,7 +137,7 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 				if(paramNameInternal.length > 30) LOG.warn(`${paramNameInternal} is too long consider shortening with "@segw.abap.name".`);
 
 				this._writer.writeLine(`primitive = model->create_primitive_type( |${paramNameInternal}| ).`);
-				this._writer.writeLine(`primitive->set_edm_type( '${param?.["$Type"].substring(4)}' ).`);
+				this._writer.writeLine(`primitive->set_edm_type( ${EDMUtils.edm2v4MedDataType(param?.["$Type"])} ).`);
 				this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_parameter->set_primitive_type( '${paramNameInternal}' ).`);
 			}else if(paramType?.["$Kind"] === "EntityType"){
 				let entity = operation.csn.params?.[param?.["$Name"]];
@@ -194,7 +195,7 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 			let returnPrimativeName = `${primitivePrefix}R`;
 			if(returnPrimativeName.length > 30) LOG.warn(`${returnPrimativeName} is too long consider shortening with "@segw.abap.name".`);
 			this._writer.writeLine(`primitive = model->create_primitive_type( |${returnPrimativeName}| ).`);
-			this._writer.writeLine(`primitive->set_edm_type( '${operation.csdl["$ReturnType"]["$Type"].substr(4)}' ).`);
+			this._writer.writeLine(`primitive->set_edm_type( ${EDMUtils.edm2v4MedDataType(operation.csdl["$ReturnType"]["$Type"])} ).`);
 			this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_return->set_primitive_type( '${operation.csdl["$ReturnType"]["$Type"]}' ).`);
 		}else if(returnType["$Kind"] === "ComplexType"){
 			let complexType = [
