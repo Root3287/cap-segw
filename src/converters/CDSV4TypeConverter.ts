@@ -373,7 +373,7 @@ export default class CDSTypeConverter implements IFABAPTypeGenerator {
 			}
 
 			let abapProperty: ABAP.Parameter = {
-				name: ABAPUtils.getABAPName(paramKey),
+				name: (<any>param)?.["@segw.abap.name"] ?? ABAPUtils.getABAPName(paramKey),
 				referenceType: ABAP.ParameterReferenceType.TYPE,
 				type: paramType,
 			};

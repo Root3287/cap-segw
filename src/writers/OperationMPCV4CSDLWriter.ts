@@ -47,6 +47,15 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 		return primitivePrefix;
 	}
 
+	private _getParamCSN(operation: Operation, param: any): any {
+		return operation.csn?.params?.[param?.["$Name"]];
+	}
+
+	private _getParamABAPName(operation: Operation, param: any): string {
+		const paramCSN = this._getParamCSN(operation, param);
+		return (paramCSN?.["@segw.abap.name"] ?? ABAPUtils.getABAPName(param?.["$Name"])).replace(/\./g, '_').toUpperCase();
+	}
+
 	private _getCDSOperation(name: string, operation: any): any {
 		const namespace = Object.keys(this._compilerInfo?.csdl)[3];
 		const service = this._compilerInfo?.csn?.services?.[namespace];
@@ -131,9 +140,10 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 			// Skip Complex type for now...
 			if(!param["$Type"].startsWith("Edm") && paramType?.["$Kind"] === "ComplexType") continue;
 
-			this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_parameter = ${operation.csdl?.["$Kind"].toLowerCase()}->create_parameter( '${param?.["$Name"].toUpperCase()}' ).`);
+			let paramABAPName = this._getParamABAPName(operation, param);
+			this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_parameter = ${operation.csdl?.["$Kind"].toLowerCase()}->create_parameter( '${paramABAPName}' ).`);
 			if(param?.["$Type"].startsWith("Edm")){
-				let paramNameInternal = `${primitivePrefix}${ABAPUtils.getABAPName(param?.["$Name"]).toUpperCase()}`;
+				let paramNameInternal = `${primitivePrefix}${paramABAPName}`;
 				if(paramNameInternal.length > 30) LOG.warn(`${paramNameInternal} is too long consider shortening with "@segw.abap.name".`);
 
 				this._writer.writeLine(`primitive = model->create_primitive_type( |${paramNameInternal}| ).`);

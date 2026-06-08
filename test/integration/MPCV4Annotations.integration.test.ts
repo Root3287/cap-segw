@@ -16,7 +16,15 @@ service AnnotService {
 
 	@segw.name: 'DoIt'
 	@segw.abap.name: 'DOIT_ABAP'
-	action doSomething() returns Boolean;
+	action doSomething(
+		@segw.abap.name: 'INPUT_TEXT'
+		text: String
+	) returns Boolean;
+
+	function findProduct(
+		@segw.abap.name: 'SEARCH_TEXT'
+		query: String
+	) returns Product;
 };
 `;
 
@@ -39,5 +47,12 @@ service AnnotService {
 		// Action ABAP/EDM overrides
 		expect(mpc).toContain("action = model->create_action( |DOIT_ABAP| ).");
 		expect(mpc).toContain("action->set_edm_name( |DoIt| ).");
+		expect(mpc).toContain("action_parameter = action->create_parameter( 'INPUT_TEXT' ).");
+		expect(mpc).toContain("primitive = model->create_primitive_type( |ACT_DOIT_ABAP_INPUT_TEXT| ).");
+		expect(mpc).toContain("INPUT_TEXT TYPE STRING,");
+
+		// Function parameter ABAP overrides
+		expect(mpc).toContain("function_parameter = function->create_parameter( 'SEARCH_TEXT' ).");
+		expect(mpc).toContain("primitive = model->create_primitive_type( |FUNC_FINDPRODUCT_SEARCH_TEXT| ).");
 	});
 });

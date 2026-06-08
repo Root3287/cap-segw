@@ -40,6 +40,10 @@ export default class OperationMPCV4Writer implements IFCodeGenerator {
 		return primitivePrefix;
 	}
 
+	private _getParamABAPName(param: any): string {
+		return ((<any>param)?.["@segw.abap.name"] ?? ABAPUtils.getABAPName(param)).replace(/\./g, '_').toUpperCase();
+	}
+
 	private _writeHeader(){
 		this._writer.writeLine("data primitive type ref to /iwbep/if_v4_med_prim_type.");
 		this._writer.writeLine("data action type ref to /iwbep/if_v4_med_action.");
@@ -79,9 +83,10 @@ export default class OperationMPCV4Writer implements IFCodeGenerator {
 			// Skip Complex type for now...
 			if(paramPrototype?.kind === "type") continue;
 
-			this._writer.writeLine(`${operation.kind}_parameter = ${operation.kind}->create_parameter( '${param.name.toUpperCase()}' ).`);
+			let paramABAPName = this._getParamABAPName(param);
+			this._writer.writeLine(`${operation.kind}_parameter = ${operation.kind}->create_parameter( '${paramABAPName}' ).`);
 			if(primitive){
-				let paramName = `${primitivePrefix}${ABAPUtils.getABAPName(param).toUpperCase()}`;
+				let paramName = `${primitivePrefix}${paramABAPName}`;
 				if(paramName.length > 30) LOG.warn(`${paramName} is too long consider shortening with "@segw.abap.name".`);
 
 				this._writer.writeLine(`primitive = model->create_primitive_type( |${paramName}| ).`);
