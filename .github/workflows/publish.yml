@@ -30,7 +30,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
-          node-version: '25'
+          node-version: '26'
           node-version-file: package.json
           cache: npm
           registry-url: https://registry.npmjs.org
@@ -65,7 +65,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
-          node-version: '25'
+          node-version: '26'
           registry-url: https://npm.pkg.github.com
           scope: '@root3287'
 
