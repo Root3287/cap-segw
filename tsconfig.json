@@ -7,12 +7,20 @@
     "declaration": true,                        // Emit .d.ts files for consumers
     "declarationDir": "./dist",                 // Keep declarations alongside build output
     "strict": true,                             // Enable all strict type checks
-		"esModuleInterop": true,                    // Better interop with CommonJS modules
-		"forceConsistentCasingInFileNames": true,
-		"skipLibCheck": true,
-		"isolatedModules": true,
-		"ignoreDeprecations": "6.0"
-	},
+    "esModuleInterop": true,                    // Better interop with CommonJS modules
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "ignoreDeprecations": "6.0",
+    "paths": {
+      "@sap/cds": [
+        "./node_modules/@cap-js/cds-types"
+      ],
+      "#cds-models/*": [
+        "./@cds-models/*"
+      ]
+    }
+  },
   "include": ["src"],                           // Only compile files inside /src
   "exclude": ["node_modules"]
 }

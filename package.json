@@ -39,11 +39,15 @@
     "jest": "^30.5.2",
     "sqlite": "^5.1",
     "ts-jest": "^29.4.14",
-    "ts-node": "^10.9",
-    "tsx": "^4.23",
-    "typescript": "^6.0"
+    "ts-node": "^10.9.2",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "@cap-js/cds-typer": ">=0.1"
   },
   "peerDependencies": {
     "@sap/cds": "^10.1.1"
+  },
+  "imports": {
+    "#cds-models/*": "./@cds-models/*/index.js"
   }
 }
