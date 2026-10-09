@@ -54,5 +54,7 @@ service AnnotService {
 		// Function parameter ABAP overrides
 		expect(mpc).toContain("function_parameter = function->create_parameter( 'SEARCH_TEXT' ).");
 		expect(mpc).toContain("primitive = model->create_primitive_type( |FUNC_FINDPRODUCT_SEARCH_TEXT| ).");
+		expect(mpc).toContain("function_import = function->create_function_import( |FINDPRODUCT| ).");
+		expect(mpc).toContain("function_import->set_edm_name( |findProduct| ).");
 	});
 });

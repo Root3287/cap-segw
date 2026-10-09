@@ -58,6 +58,8 @@ describe("Integration: CAP -> SEGW MPC V4 generation", () => {
 
 		expect(mpc).toContain("action = model->create_action( |RESETALL| ).");
 		expect(mpc).toContain("action->set_edm_name( |resetAll| ).");
+		expect(mpc).toContain("action_import = action->create_action_import( |RESETALL| ).");
+		expect(mpc).toContain("action_import->set_edm_name( |resetAll| ).");
 		expect(mpc).toContain("action_return->set_primitive_type( 'Edm.Boolean' ).");
 	});
 });

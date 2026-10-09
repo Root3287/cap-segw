@@ -88,6 +88,7 @@ export default class OperationMPCV4CSDLWriter implements IFCodeGenerator {
 		// let operation.name = ABAPUtils.getABAPName(this._getoperation.name(operation));
 		if(operation.csdl?.["$IsBound"]) return;
 		this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_import = ${operation.csdl?.["$Kind"].toLowerCase()}->create_${operation.csdl?.["$Kind"].toLowerCase()}_import( |${operation.abap_name.toUpperCase()}| ).`);
+		this._writer.writeLine(`${operation.csdl?.["$Kind"].toLowerCase()}_import->set_edm_name( |${operation.name.replace(/\./g, '_')}| ).`);
 		
 		// Actions don't need Entity Set
 		if(operation.csdl?.["$Kind"] === "Action") {

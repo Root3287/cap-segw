@@ -64,7 +64,7 @@ export default class OperationMPCV4Writer implements IFCodeGenerator {
 
 		if(!operation?.parent){
 			this._writer.writeLine(`${operation.kind}_import = ${operation.kind}->create_${operation.kind}_import( |${actionABAPName.toUpperCase()}| ).`);
-			this._writer.writeLine(`${operation.kind}_import->set_edm_name( '${operationName}' ).`);
+			this._writer.writeLine(`${operation.kind}_import->set_edm_name( |${operationName}| ).`);
 		}else{
 			this._writer.writeLine(`${operation.kind}_parameter = ${operation.kind}->create_parameter( 'PARENT' ).`);
 			this._writer.writeLine(`${operation.kind}_parameter->set_is_binding_parameter( ).`);
@@ -173,7 +173,7 @@ export default class OperationMPCV4Writer implements IFCodeGenerator {
 			const edmName = this._getOperationName(operation);
 
 			this._writer.writeLine(`${operation.kind} = model->create_${operation.kind}( |${internalName}| ).`);
-			this._writer.writeLine(`${operation.kind}->set_edm_name( '${edmName}' ).`);
+			this._writer.writeLine(`${operation.kind}->set_edm_name( |${edmName}| ).`);
 			
 			this._writeParams(operation);
 			this._writeReturn(operation);
