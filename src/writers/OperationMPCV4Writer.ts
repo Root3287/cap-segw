@@ -87,6 +87,7 @@ export default class OperationMPCV4Writer implements IFCodeGenerator {
 			this._writer.writeLine(`${operation.kind}_parameter = ${operation.kind}->create_parameter( '${paramABAPName}' ).`);
 			if(primitive){
 				let paramName = `${primitivePrefix}${paramABAPName}`;
+				paramName = (paramName.length <= 30) ? paramName : paramABAPName;
 				if(paramName.length > 30) LOG.warn(`${paramName} is too long consider shortening with "@segw.abap.name".`);
 
 				this._writer.writeLine(`primitive = model->create_primitive_type( |${paramName}| ).`);
@@ -97,6 +98,8 @@ export default class OperationMPCV4Writer implements IFCodeGenerator {
 			}else if(paramPrototype?.kind === "type"){
 				// TODO: Flatten Complex Param
 			}
+
+			this._writer.writeLine();
 		}
 
 		this._writer.writeLine();
