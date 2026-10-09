@@ -6,6 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.6]
+
+### Fix
+
+- Action/Function Imports getting `edm_set_name`
+
+## [1.1.5]
+
+### Changed
+
+- Bumped Package Version
+
 ## [1.1.4]
 
 ### Feature
@@ -85,6 +97,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitLab CI pipeline with test/build, manual publish to GitLab registry, and GitHub status/release notifications.
 - GitHub Actions workflow for npm publishing (Trusted Publishing) and GitLab registry publishing.
 
+[1.1.6]: https://git.root3287.site/root3287/cap-segw/-/releases/v1.1.6 https://github.com/Root3287/cap-segw/releases/tag/v1.1.6
+[1.1.5]: https://git.root3287.site/root3287/cap-segw/-/releases/v1.1.5 https://github.com/Root3287/cap-segw/releases/tag/v1.1.5
 [1.1.4]: https://git.root3287.site/root3287/cap-segw/-/releases/v1.1.4 https://github.com/Root3287/cap-segw/releases/tag/v1.1.4
 [1.1.3]: https://git.root3287.site/root3287/cap-segw/-/releases/v1.1.3 https://github.com/Root3287/cap-segw/releases/tag/v1.1.3
 [1.1.2]: https://git.root3287.site/root3287/cap-segw/-/releases/v1.1.2 https://github.com/Root3287/cap-segw/releases/tag/v1.1.2
